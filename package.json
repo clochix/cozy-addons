@@ -1,0 +1,19 @@
+{
+  "name": "cozy-addons",
+  "version": "0.0.0",
+  "description": "Sample addons for CozyCloud Web Applications",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/clochix/cozy-addons.git"
+  },
+  "author": "Clochix <clochix@clochix.net>",
+  "license": "GPL v3",
+  "bugs": {
+    "url": "https://github.com/clochix/cozy-addons/issues"
+  },
+  "homepage": "https://github.com/clochix/cozy-addons"
+}
