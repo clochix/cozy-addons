@@ -6,13 +6,74 @@
     <title></title>
 </head>
 <body>
-    <script src="lib/Object.observe/Object.observe.poly.js"></script>
-    <script src="js/plugins.js"></script>
-    <script type="text/javascript">
-      window.addEventListener('load', function () {
-        pluginUtils.init();
-        pluginUtils.load('mailkeys/');
+  <button data-target="mailkeys/">Raccources clavier</button>
+  <button data-target="pgp/">OpenPGP</button>
+  <pre class="signed-message" contenteditable>
+  
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+                    GNU GENERAL PUBLIC LICENSE
+                       Version 3, 29 June 2007
+
+ Copyright (C) 2007 Free Software Foundation, Inc. {http://fsf.org/}
+ Everyone is permitted to copy and distribute verbatim copies
+ of this license document, but changing it is not allowed.
+
+                            Preamble
+
+  The GNU General Public License is a free, copyleft license for
+software and other kinds of works.
+
+  The licenses for most software and other practical works are designed
+to take away your freedom to share and change the works.  By contrast,
+the GNU General Public License is intended to guarantee your freedom to
+share and change all versions of a program--to make sure it remains free
+software for all its users.  We, the Free Software Foundation, use the
+GNU General Public License for most of our software; it applies also to
+any other work released this way by its authors.  You can apply it to
+your programs, too.
+
+  When we speak of free software, we are referring to freedom, not
+price.  Our General Public Licenses are designed to make sure that you
+have the freedom to distribute copies of free software (and charge for
+them if you wish), that you receive source code or can get it if you
+want it, that you can change the software or use pieces of it in new
+free programs, and that you know you can do these things.
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iQIcBAEBAgAGBQJUSViqAAoJEJbdS1wgYIOPBhMP/0OWP8Lpoy4tkT2Q9N9prsnv
+RR+cNqMfNYwbrZV2e03nIG5g8gMQ2xlX2WEAsyUkiEX5P1MppTQvle+a1lGYIIEX
+UlnIaYTQtXV/2pwQo+e8VjQYnkvQcfio1+XUz1g+aoINuv5EC5Pc0cmLe6WTt+Fn
+hFOe6f4yJ3+2ot8l7sA7b6oNVidK709iC4+F28xpmro5hQ0jVPD4ypyJCCtSlL/h
+LFrPKc+2zE7QNz1AVaos/+AKfg/O2z0TicdOApAV0LOrcOldr40dGdo9Dsfh6G5q
+hAJJjNC3gzti93kx5n/6jYiT4LuH6MA4UAZ9GJxlU0x3TYDMthWlOcwRtqLPLL0Q
+VmtFbeieUT585YzT4yiobl4QAlTIDg9FoEj9CWAQZEt2Bms0LHglbF1cODpGpjCy
+08cC4hLOlYWT0x1vhvW47oAA9FCRa9JR+vfzV6PX6+K+4Pri1fzL2Ck/NVrCnpmh
+p+GKRB/Gy4G6ZVTbHe7WDEeO4e4+RbljRcqe5BYoYAPKz7aYoXkgRFPqTqqEu3Pa
+Un5FXhYRa95Gv/PwS0QDyP9usSpyyVQIXmRpWezFek7ut2YZ2gzjP8bSX6gAFC+L
+KUK9LKqH6beJCLyH+RG1jwUg8LK4J3Vd4Ev1VxnCX1E0OXn1MPTApJxVSi2B85zh
+7GIMBkhoRrKaOrG3Ymbb
+=nfyG
+-----END PGP SIGNATURE-----
+  </pre>
+  <script src="lib/Object.observe/Object.observe.poly.js"></script>
+  <script src="js/plugins.js"></script>
+  <script type="text/javascript">
+    window.addEventListener('load', function () {
+      pluginUtils.init();
+      window.addEventListener("plugin", function (ev) {
+        //window.alert("Plugin " + ev.detail.name + " " + ev.detail.action);
       });
-    </script>
+      document.body.addEventListener('click', function (ev) {
+        if (ev.target.dataset.target) {
+          ev.preventDefault()
+          pluginUtils.load(ev.target.dataset.target);
+        }
+      });
+    });
+  </script>
 </body>
 </html>

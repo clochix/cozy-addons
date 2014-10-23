@@ -68,13 +68,13 @@
             var pluginConf = window.plugins[pluginName];
             if (pluginConf.active) {
               if (pluginConf.onAdd !== null) {
-                if (pluginConf.onAdd.condition(document.body)) {
-                  pluginConf.onAdd.action(document.body);
+                if (pluginConf.onAdd.condition.bind(pluginConf)(document.body)) {
+                  pluginConf.onAdd.action.bind(pluginConf)(document.body);
                 }
               }
               if (pluginConf.onDelete !== null) {
-                if (pluginConf.onDelete.condition(document.body)) {
-                  pluginConf.onDelete.action(document.body);
+                if (pluginConf.onDelete.condition.bind(pluginConf)(document.body)) {
+                  pluginConf.onDelete.action.bind(pluginConf)(document.body);
                 }
               }
             }
@@ -83,7 +83,7 @@
       }
     },
     activate: function (key) {
-      var plugin, type;
+      var plugin, type, event;
       plugin = window.plugins[key];
       type = plugin.type;
       plugin.active = true;
@@ -105,9 +105,12 @@
           }
         });
       }
+      event = new CustomEvent("plugin", {"detail": {action: "activate", name: key}});
+      window.dispatchEvent(event);
     },
     deactivate: function (key) {
-      var plugin = window.plugins[key];
+      var event,
+          plugin = window.plugins[key];
       plugin.active = false;
       if (plugin.listeners !== null) {
         Object.keys(plugin.listeners).forEach(function (event) {
@@ -117,6 +120,8 @@
       if (plugin.onDeactivate) {
         plugin.onDeactivate();
       }
+      event = new CustomEvent("plugin", {"detail": {action: "deactivate", name: key}});
+      window.dispatchEvent(event);
     },
     merge: function (remote) {
       Object.keys(remote).forEach(function (pluginName) {
