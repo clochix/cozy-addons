@@ -6,8 +6,14 @@
     <title></title>
 </head>
 <body>
-  <button data-target="mailkeys/">Raccources clavier</button>
-  <button data-target="pgp/">OpenPGP</button>
+  <div>
+    <button data-target="mailkeys/">Raccources clavier</button>
+    <button data-target="pgp/">OpenPGP</button>
+    <button data-target="gallery/">Gallery</button>
+  </div>
+  <div>
+    <a id="bookmarklet">Bookmarklet</a>
+  </div>
   <pre class="signed-message" contenteditable>
   
 -----BEGIN PGP SIGNED MESSAGE-----
@@ -59,6 +65,7 @@ KUK9LKqH6beJCLyH+RG1jwUg8LK4J3Vd4Ev1VxnCX1E0OXn1MPTApJxVSi2B85zh
 =nfyG
 -----END PGP SIGNATURE-----
   </pre>
+  <img src="http://cozy.io/assets/images/bighappycloud.png" />
   <script src="lib/Object.observe/Object.observe.poly.js"></script>
   <script src="js/plugins.js"></script>
   <script type="text/javascript">
@@ -74,6 +81,7 @@ KUK9LKqH6beJCLyH+RG1jwUg8LK4J3Vd4Ev1VxnCX1E0OXn1MPTApJxVSi2B85zh
         }
       });
     });
+    document.getElementById('bookmarklet').href = "javascript:(function(){document.body.appendChild(document.createElement('script')).src='http://clochix.net/cozy-addons/js/plugins.js'})();"
   </script>
 </body>
 </html>
