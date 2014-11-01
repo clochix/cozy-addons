@@ -1,7 +1,39 @@
 //jshint browser: true
+/*global Promise: true */
 (function (root) {
   "use strict";
 
+  // Simplistic polyfill
+  if (typeof Promise !== 'function') {
+    Promise = function (p) {
+      var promise = {
+        resolved: false,
+        rejected: false,
+        value: undefined,
+        then: function (onResolved, onRejected) {
+          var interval = window.setInterval(function () {
+            if (promise.resolved || promise.rejected) {
+              window.clearInterval(interval);
+              if (promise.resolved && typeof onResolved === 'function') {
+                onResolved.call(this, promise.value);
+              }
+              if (promise.rejected && typeof onRejected === 'function') {
+                onRejected.call(this, promise.value);
+              }
+            }
+          }, 100);
+        }
+      };
+      p(function (val) {
+        promise.value = val;
+        promise.resolved = true;
+      }, function (val) {
+        promise.value = val;
+        promise.rejected = true;
+      });
+      return promise;
+    };
+  }
   root.pluginUtils = {
     init: function () {
       var config, observer, onMutation, self = this;
@@ -41,8 +73,7 @@
               if (pluginConf.active) {
                 if (action === 'add') {
                   pluginConf.onAdd.condition.bind(pluginConf)(node);
-                }
-                else if (action === 'delete') {
+                } else if (action === 'delete') {
                   pluginConf.onDelete.condition.bind(pluginConf)(node);
                 }
               }
@@ -144,30 +175,43 @@
       });
     },
     load: function (url) {
-      var xhr = new XMLHttpRequest();
-      xhr.open('GET', url, true);
-      xhr.onload = function () {
-        var parser = new DOMParser(),
-            doc = parser.parseFromString(xhr.response, 'text/html');
-        if (doc) {
-          // Chrome doesn't like to iterate on doc.styleSheets
-          Array.prototype.forEach.call(doc.querySelectorAll('style'), function (sheet) {
-            var style = document.createElement('style');
-            document.body.appendChild(style);
-            Array.prototype.forEach.call(sheet.sheet.cssRules, function (rule, id) {
-              style.sheet.insertRule(rule.cssText, id);
-            });
-          });
-          Array.prototype.forEach.call(doc.querySelectorAll('script'), function (script) {
-            var s = document.createElement('script');
-            s.textContent = script.textContent;
-            document.body.appendChild(s);
-          });
+      // Get absolute path of this script, allowing to load plugins relatives
+      // to it
+      if (!/:\/\//.test(url)) {
+        try {
+          throw new Error();
+        } catch (e) {
+          var base = e.stack.split("\n")[0].split('@')[1].split(/:\d/)[0].split('/').slice(0, -2).join('/');
+          url = base + '/' + url + '/';
         }
-      };
-      xhr.send();
+      }
+      return new Promise(function (resolve, reject) {
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', url, true);
+        xhr.onload = function () {
+          var parser = new DOMParser(),
+              doc = parser.parseFromString(xhr.response, 'text/html');
+          if (doc) {
+            // Chrome doesn't like to iterate on doc.styleSheets
+            Array.prototype.forEach.call(doc.querySelectorAll('style'), function (sheet) {
+              var style = document.createElement('style');
+              document.body.appendChild(style);
+              Array.prototype.forEach.call(sheet.sheet.cssRules, function (rule, id) {
+                style.sheet.insertRule(rule.cssText, id);
+              });
+            });
+            Array.prototype.forEach.call(doc.querySelectorAll('script'), function (script) {
+              var s = document.createElement('script');
+              s.textContent = script.textContent;
+              document.body.appendChild(s);
+            });
+          }
+          resolve();
+
+        };
+        xhr.send();
+      });
     }
   };
 
 })(this);
-
