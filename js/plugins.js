@@ -51,8 +51,12 @@
         });
       });
       Object.keys(window.plugins).forEach(function (pluginName) {
-        if (window.plugins[pluginName].active) {
-          this.activate(pluginName);
+        if (typeof window.plugins[pluginName].url !== 'undefined') {
+          self.loadJS(window.plugins[pluginName].url);
+        } else {
+          if (window.plugins[pluginName].active) {
+            this.activate(pluginName);
+          }
         }
       });
       if (typeof MutationObserver !== "undefined") {
@@ -69,12 +73,18 @@
               return;
             }
             Object.keys(window.plugins).forEach(function (pluginName) {
-              var pluginConf = window.plugins[pluginName];
+              var listener,
+                  pluginConf = window.plugins[pluginName];
               if (pluginConf.active) {
                 if (action === 'add') {
-                  pluginConf.onAdd.condition.bind(pluginConf)(node);
+                  listener = pluginConf.onAdd;
                 } else if (action === 'delete') {
-                  pluginConf.onDelete.condition.bind(pluginConf)(node);
+                  listener = pluginConf.onDelete;
+                }
+                if (typeof listener === 'function') {
+                  if (listener.condition.bind(pluginConf)(node)) {
+                    listener.action.bind(pluginConf)(node);
+                  }
                 }
               }
             });
@@ -161,7 +171,11 @@
         if (local !== null) {
           local.active = pluginConf.active;
         } else {
-          delete remote[pluginName];
+          if (typeof pluginConf.url === 'undefined') {
+            delete remote[pluginName];
+          } else {
+            window.plugins[pluginName] = pluginConf;
+          }
         }
       });
       Object.keys(window.plugins).forEach(function (pluginName) {
@@ -173,6 +187,13 @@
           };
         }
       });
+    },
+    loadJS: function (url) {
+      var script = document.createElement('script');
+      script.type  = 'text/javascript';
+      script.async = true;
+      script.src   = url;
+      document.body.appendChild(script);
     },
     load: function (url) {
       // Get absolute path of this script, allowing to load plugins relatives
