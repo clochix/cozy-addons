@@ -15,5 +15,8 @@
   "bugs": {
     "url": "https://github.com/clochix/cozy-addons/issues"
   },
-  "homepage": "https://github.com/clochix/cozy-addons"
+  "homepage": "https://github.com/clochix/cozy-addons",
+  "scripts": {
+    "openpgp": "uglifyjs openpgp/init.js openpgp/lib/openpgp.min.js > dist/openpgp.js"
+  }
 }
