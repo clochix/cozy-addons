@@ -13,6 +13,7 @@ window.plugins.activity = {
     if (typeof window.MozActivity === 'undefined') {
       var manifest, options;
       options = {
+        postMethod: 'message',
         server: 'http://127.0.0.1:9250',
         ws: 'ws://127.0.0.1:9250'
       };
@@ -68,7 +69,7 @@ window.plugins.activity = {
       Array.prototype.forEach.call(attachments, function (elmt, idx) {
         var icon = document.createElement('a');
         icon.style.paddingLeft = '.5em';
-        icon.innerHTML = "<i class='fa fa-save' data-gallery></i>";
+        icon.innerHTML = "<i class='fa fa-cloud-upload' data-gallery></i>";
         icon.addEventListener('click', function () {
           var xhr = new XMLHttpRequest();
           xhr.open("GET", elmt.dataset.fileUrl, true);
@@ -101,7 +102,7 @@ window.plugins.activity = {
           };
           xhr.send();
         });
-        elmt.parentNode.appendChild(icon);
+        elmt.parentNode.querySelector('.file-actions').appendChild(icon);
 
       });
     }

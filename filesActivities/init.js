@@ -62,8 +62,11 @@ if (typeof window.plugins !== "object") {
           window.jQuery(win).modal('hide');
           onOk(e.target.dataset.path);
         }, true);
-        win = window.plugins.helpers.modal({'body': treeDom, onClose: onClose});
-        console.log(win);
+        // Wait a little for the page to really be rendered
+        setTimeout(function () {
+          win = window.plugins.helpers.modal({'body': treeDom, onClose: onClose});
+          console.log(win);
+        }, 500);
       }
     });
   }
@@ -138,7 +141,7 @@ if (typeof window.plugins !== "object") {
         options = {
           server: 'http://localhost:9250',
           ws: 'ws://localhost:9250',
-          postMethod: "socket"
+          postMethod: "message"
         };
         new window.Acthesis(options, manifest);
       }
