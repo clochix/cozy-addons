@@ -62,10 +62,11 @@ window.plugins.activity = {
   },
   onAdd: {
     condition: function (node) {
-      return node.querySelectorAll("[data-file-url]").length > 0;
+      return node.querySelectorAll("[data-file-url], .file-picker").length > 0;
     },
     action: function (node) {
-      var attachments = node.querySelectorAll("[data-file-url]");
+      var attachments, pickers;
+      attachments = node.querySelectorAll("[data-file-url]");
       Array.prototype.forEach.call(attachments, function (elmt, idx) {
         var icon = document.createElement('a');
         icon.style.paddingLeft = '.5em';
@@ -98,11 +99,57 @@ window.plugins.activity = {
             };
             reader.readAsDataURL(xhr.response);
 
-            //blob = new Blob([xhr.response], {type: elmt.dataset.fileType});
           };
           xhr.send();
         });
         elmt.parentNode.querySelector('.file-actions').appendChild(icon);
+
+      });
+      pickers = node.querySelectorAll(".file-picker");
+      Array.prototype.forEach.call(pickers, function (elmt, idx) {
+        if (!elmt.querySelector('.file-wrapper') || elmt.querySelector('.files-activity')) {
+          return;
+        }
+        var icon = document.createElement('a');
+        icon.classList.add('clickable');
+        icon.style.paddingLeft = '.5em';
+        icon.innerHTML = "<i class='fa fa-cloud-download files-activity'></i>";
+        icon.addEventListener('click', function () {
+          var activity;
+          activity = new window.MozActivity({
+            name: "pick",
+            data: { }
+          });
+          activity.onsuccess = function () {
+            console.log("[client] Activity successfuly handled");
+            console.log('[client]', this.result);
+            function dataURItoBlob(dataURI) {
+              var byteString, mimeString, ia, i;
+              if (dataURI.split(',')[0].indexOf('base64') >= 0) {
+                byteString = atob(dataURI.split(',')[1]);
+              } else {
+                byteString = window.unescape(dataURI.split(',')[1]);
+              }
+              mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0];
+              ia = new Uint8Array(byteString.length);
+              for (i = 0; i < byteString.length; i++) {
+                ia[i] = byteString.charCodeAt(i);
+              }
+              return ia;
+            }
+
+            var component = window.rootComponent.refs.compose.refs.attachments,
+                blob      = new Blob([dataURItoBlob(this.result.data), {type: this.result.type}]);
+            blob.type = this.result.type;
+            blob.name = this.result.name;
+            component.addFiles([component._fromDOM(blob)]);
+          };
+          activity.onerror = function () {
+            console.error("[client] The activity got an error: " + this.error);
+            console.log(this.error);
+          };
+        });
+        elmt.appendChild(icon);
 
       });
     }

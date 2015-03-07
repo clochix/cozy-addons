@@ -3,10 +3,11 @@ if (typeof window.plugins !== "object") {
   window.plugins = {};
 }
 (function () {
+  "use strict";
   function get(url, cb) {
     var xhr = new XMLHttpRequest();
     xhr.open('GET', url, true);
-    xhr.onload = function (e) {
+    xhr.onload = function () {
       if (typeof cb === 'function') {
         cb(null, xhr);
       }
@@ -70,6 +71,38 @@ if (typeof window.plugins !== "object") {
       }
     });
   }
+  function onClickHandler(e) {
+    var target, xhr;
+    if (!window.plugins.activities.picking) {
+      return;
+    }
+    target = e.target.closest("[data-file-url]");
+    if (target !== null) {
+      e.preventDefault();
+      e.stopPropagation();
+      window.plugins.activities.picking = false;
+      xhr = new XMLHttpRequest();
+      xhr.open("GET", target.dataset.fileUrl, true);
+      xhr.responseType = "blob";
+      xhr.onload = function () {
+        var reader;
+        console.log(xhr);
+        reader  = new FileReader();
+        reader.onloadend = function () {
+          var res = {
+            name: target.dataset.fileUrl.split('/').pop(),
+            data: reader.result,
+            type: xhr.response.type,
+            size: xhr.response.size
+          };
+          window.plugins.activities.message.postResult(res);
+          //window.close();
+        };
+        reader.readAsDataURL(xhr.response);
+      };
+      xhr.send();
+    }
+  }
 
   window.plugins.activities = {
     name: "Activities",
@@ -81,16 +114,15 @@ if (typeof window.plugins !== "object") {
        * @param {DOMNode} root node of added subtree
        */
       condition: function (node) {
-        //return node.querySelector('iframe.content') !== null;
-        return false;
+        return node.id === 'table-items' || node.querySelector('#table-items') !== null;
       },
       /**
        * Perform action on added subtree
        *
        * @param {DOMNode} root node of added subtree
        */
-      action: function (node) {
-        //console.log('Add', node);
+      action: function () {
+        document.getElementById('table-items').addEventListener('click', onClickHandler);
       }
     },
     onDelete: {
@@ -99,7 +131,7 @@ if (typeof window.plugins !== "object") {
        *
        * @param {DOMNode} root node of added subtree
        */
-      condition: function (node) {
+      condition: function () {
         //return node.querySelector('iframe.content') !== null;
         return false;
       },
@@ -139,28 +171,27 @@ if (typeof window.plugins !== "object") {
           }
         };
         options = {
-          server: 'http://localhost:9250',
-          ws: 'ws://localhost:9250',
+          "server": window.location.protocol + "//" + window.location.hostname + ":9104/apps/acthesis",
+          //"ws": "ws://cozy.clochix.net:9104/apps/acthesis",
           postMethod: "message"
         };
         new window.Acthesis(options, manifest);
       }
 
       handler = function (message) {
-        "use strict";
         //console.log("[provider] Handler", message);
         var data = message.source.data;
-        function ok(path) {
+        function saveOk(path) {
           var formData, xhr, blob;
 
           function dataURItoBlob(dataURI) {
-            var byteString, mimeString, ia, i;
+            var byteString, ia, i;
             if (dataURI.split(',')[0].indexOf('base64') >= 0) {
               byteString = atob(dataURI.split(',')[1]);
             } else {
               byteString = window.unescape(dataURI.split(',')[1]);
             }
-            mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0];
+            //mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0];
             ia = new Uint8Array(byteString.length);
             for (i = 0; i < byteString.length; i++) {
               ia[i] = byteString.charCodeAt(i);
@@ -182,14 +213,16 @@ if (typeof window.plugins !== "object") {
 
           message.postResult(path);
         }
-        function ko(result) {
+        function saveKo(result) {
           message.postError(result);
         }
         switch (message.source.name) {
           case 'save':
-            folderTree(ok, ko);
+            folderTree(saveOk, saveKo);
             break;
           case 'pick':
+            window.plugins.activities.picking = true;
+            window.plugins.activities.message = message;
             break;
           default:
             message.postError("WRANG ACTIVITY");
@@ -208,11 +241,6 @@ if (typeof window.plugins !== "object") {
      */
     onDeactivate: function () {
       //console.log('Plugin sample deactivated');
-    },
-    listeners: {
-      'VIEW_ACTION': function (params) {
-        //console.log('Got View action', params.detail);
-      }
     }
   };
 }());
