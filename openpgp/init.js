@@ -4,6 +4,8 @@ if (typeof window.plugins !== "object") {
   window.plugins = {};
 }
 (function (root) {
+  "use strict";
+  var wallet;
   function render(txt) {
     var actionbar, container;
     container = document.querySelector('.messageToolbox + .row');
@@ -17,49 +19,80 @@ if (typeof window.plugins !== "object") {
       actionbar.textContent = txt;
       container.insertBefore(actionbar, container.firstChild);
     }
+    return actionbar;
+  }
+  function doCheck(msg, key) {
+    var pubKeys1 = {}, pubKeys2 = [];
+    function format(pubkey) {
+      var users = [];
+      //debugger;
+      pubkey.users.forEach(function (u) {
+        if (typeof u.userId !== 'undefined' && u.userId !== null) {
+          users.push(u.userId.userid);
+        }
+      });
+      pubkey.userNames = users.join(', ');
+      pubkey.getKeyIds().forEach(function (id) {
+        pubKeys1[id.toHex()] = pubkey;
+      });
+      pubKeys2.push(pubkey);
+    }
+    if (typeof key === 'string') {
+      openpgp.key.readArmored(key).keys.forEach(format);
+    } else {
+      format(key);
+    }
+    msg.verify(pubKeys2).forEach(function (verify) {
+      var pubkeyId = verify.keyid.toHex(),
+          name     = pubkeyId.substr(-8).toUpperCase() + " " + pubKeys1[pubkeyId].userNames,
+          actionbar, btn;
+      if (verify.valid === true) {
+        actionbar = render('Good signature by key ' + name);
+        btn = document.createElement('button');
+        btn.textContent = 'Add';
+        btn.addEventListener('click', function () {
+          wallet.publicKeys.importKey(key);
+          //wallet.publicKeys.push(verify);
+          console.log(wallet.getAllKeys());
+          alert("Key " + pubkeyId + " added");
+          wallet.store();
+        });
+        actionbar.appendChild(btn);
+      } else {
+        render('Wrong signature by key ' + name);
+      }
+    });
   }
   function checkSignatures(msg) {
     var keys;
     try {
       keys = msg.getSigningKeyIds();
       keys.forEach(function (keyID) {
-        var req = new XMLHttpRequest();
-        req.open('GET', 'http://www.corsproxy.com/pgp.mit.edu/pks/lookup?op=get&search=0x' + keyID.toHex(), true);
-        req.onreadystatechange = function (aEvt) {
-          var pubKeys1 = {}, pubKeys2 = [];
-          if (req.readyState === 4) {
-            if (req.status === 200) {
-              try {
-                openpgp.key.readArmored(req.responseText).keys.forEach(function (pubkey) {
-                  var users = [];
-                  pubkey.users.forEach(function (u) {
-                    if (typeof u.userId !== 'undefined' && u.userId !== null) {
-                      users.push(u.userId.userid);
-                    }
-                  });
-                  pubkey.userNames = users.join(', ');
-                  pubKeys1[keyID.toHex()] = pubkey;
-                  pubKeys2.push(pubkey);
-                });
-                msg.verify(pubKeys2).forEach(function (verify) {
-                  var pubkeyId = verify.keyid.toHex(),
-                  name = pubkeyId + " " + pubKeys1[pubkeyId].userNames;
-                  if (verify.valid === true) {
-                    render('Good signature by key ' + name);
-                  } else {
-                    render('Wrong signature by key ' + name);
-                  }
-                });
-              } catch (e) {
-                render("Unable to check message signature");
-                console.log(e);
+        var key, req;
+        keyID = keyID.toHex();
+        key = wallet.publicKeys.getForId(keyID);
+        if (key === null) {
+          req = new XMLHttpRequest();
+          //req.open('GET', 'http://www.corsproxy.com/pgp.mit.edu/pks/lookup?op=get&search=0x' + keyID, true);
+          req.open('GET', 'https://keys.whiteout.io/publickey/key/' + keyID, true);
+          req.onreadystatechange = function () {
+            if (req.readyState === 4) {
+              if (req.status === 200) {
+                try {
+                  doCheck(msg, req.responseText);
+                } catch (e) {
+                  render("Unable to check message signature");
+                  console.log(e);
+                }
+              } else {
+                render("Key not found");
               }
-            } else {
-              render("Key not found");
             }
-          }
-        };
-        req.send(null);
+          };
+          req.send(null);
+        } else {
+          doCheck(msg, key);
+        }
       });
     } catch (e) {
       render("Unable to check message signature");
@@ -67,14 +100,13 @@ if (typeof window.plugins !== "object") {
     }
   }
   function checkMessage(message) {
-    var cleartext, mailboxId, messageId, boundary, xhr;
+    var cleartext, messageId, boundary, xhr;
     render('Checking signature');
     if (/^-----BEGIN PGP SIGNED MESSAGE/.test(message.text)) {
       cleartext = openpgp.cleartext.readArmored(message.text);
       checkSignatures(cleartext);
     } else {
-      mailboxId = window.cozyMails.getCurrentMailbox().id;
-      messageId = message.mailboxIDs[mailboxId];
+      messageId = window.cozyMails.getCurrentMessage().id;
       message.headers['content-type'].split(/;\s+/).forEach(function (type) {
         if (/boundary/.test(type)) {
           boundary = type.split('=')[1].replace(/"|'/g, '')
@@ -83,7 +115,7 @@ if (typeof window.plugins !== "object") {
         }
       });
       xhr = new XMLHttpRequest();
-      xhr.open('GET', 'raw/' + mailboxId + '/' + messageId, true);
+      xhr.open('GET', 'raw/' + messageId, true);
       xhr.onload = function () {
         try {
           var re  = new RegExp("^." + boundary + ".*$", "gim"),
@@ -96,7 +128,7 @@ if (typeof window.plugins !== "object") {
               headers[tmp[0].toLowerCase()] = tmp[1];
             }
           });
-          res = /boundary=(.)([^\1]+)\1/.exec(headers['content-type']);
+          res = /boundary=(.)([^\1]+?)\1/.exec(headers['content-type']);
           if (res && res.length === 3) {
             boundary = res[2].replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&");
           }
@@ -116,7 +148,7 @@ if (typeof window.plugins !== "object") {
 
       };
       xhr.onerror = function (e) {
-        // @TODO
+        console.log("Error: ", e);
       };
       xhr.send();
       /*
@@ -132,17 +164,53 @@ if (typeof window.plugins !== "object") {
   root.OpenPGP = {
     name: "OpenPGP",
     active: true,
-    listeners: {
-      'MESSAGE_LOADED': function (params) {
-        var message = params.detail;
-        if (/PGP/.test(message.text) ||
-            message.attachments.some(function (a) {
-              return /pgp/.test(a.contentType);
-            })
-           ) {
-              checkMessage(message);
-            }
+    onActivate: function () {
+      wallet = new openpgp.Keyring();
+      window.wallet = wallet;
+    },
+    onAdd: {
+      condition: function (node) {
+        return node.querySelectorAll(".form-compose textarea").length > 0;
+      },
+      action: function (node) {
+        if (node.querySelector('.btn-encrypt')) {
+          return;
         }
+        var btn;
+        btn = document.createElement('button');
+        btn.setAttribute('class', 'btn btn-cozy-non-default btn-encrypt');
+        btn.textContent = 'Encrypt';
+        btn.addEventListener('click', function (e) {
+          e.preventDefault();
+          var keys = [];
+          document.getElementById('compose-to').value.split(',').forEach(function (address) {
+            var key = wallet.publicKeys.getForAddress(address.trim());
+            if (key.length > 0) {
+              keys = keys.concat(key);
+            }
+          });
+          if (keys.length > 0) {
+            openpgp.encryptMessage(keys, node.querySelector('textarea').value).then(function (pgpMessage) {
+              node.querySelector('textarea').value = pgpMessage;
+            }).catch(function (error) {
+              console.log('error', error);
+            });
+          }
+        });
+        node.querySelector('.btn-cancel').parentNode.appendChild(btn);
+      }
+    },
+    listeners: {
+      'MESSAGE_LOADED': function () {
+        var message = window.cozyMails.getCurrentMessage(),
+            sigAttached;
+        sigAttached = message.attachments.some(function (a) {
+          return /pgp/.test(a.contentType);
+        });
+        if (/PGP/.test(message.text) || sigAttached) {
+          checkMessage(message);
+        }
+      }
     }
   };
-      })(window.plugins);
+})(window.plugins);
