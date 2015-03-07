@@ -3,6 +3,9 @@
   "version": "0.0.0",
   "description": "Sample addons for CozyCloud Web Applications",
   "main": "index.js",
+  "dependencies": {
+    "acthesis": "^0.1.0"
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
