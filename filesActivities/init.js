@@ -44,7 +44,7 @@ if (typeof window.plugins !== "object") {
       onKo('USER CANCELED');
     }
     get('/folders/list', function (err, xhr) {
-      var tree = {}, folders, treeDom, win;
+      var tree = {}, folders, treeDom, win, wait;
       if (err) {
         console.log(err);
         onKo(err);
@@ -64,10 +64,14 @@ if (typeof window.plugins !== "object") {
           onOk(e.target.dataset.path);
         }, true);
         // Wait a little for the page to really be rendered
-        setTimeout(function () {
-          win = window.plugins.helpers.modal({'body': treeDom, onClose: onClose});
-          console.log(win);
-        }, 500);
+        wait = setInterval(function () {
+          var ready = document.getElementById('files') !== null;
+          if (ready) {
+            clearInterval(wait);
+            win = window.plugins.helpers.modal({'body': treeDom, onClose: onClose});
+            console.log(win);
+          }
+        }, 100);
       }
     });
   }
@@ -86,7 +90,6 @@ if (typeof window.plugins !== "object") {
       xhr.responseType = "blob";
       xhr.onload = function () {
         var reader;
-        console.log(xhr);
         reader  = new FileReader();
         reader.onloadend = function () {
           var res = {
@@ -108,61 +111,36 @@ if (typeof window.plugins !== "object") {
     name: "Activities",
     active: true,
     onAdd: {
-      /**
-       * Should return true if plugin applies on added subtree
-       *
-       * @param {DOMNode} root node of added subtree
-       */
       condition: function (node) {
         return node.id === 'table-items' || node.querySelector('#table-items') !== null;
       },
-      /**
-       * Perform action on added subtree
-       *
-       * @param {DOMNode} root node of added subtree
-       */
       action: function () {
         document.getElementById('table-items').addEventListener('click', onClickHandler);
       }
     },
     onDelete: {
-      /**
-       * Should return true if plugin applies on added subtree
-       *
-       * @param {DOMNode} root node of added subtree
-       */
       condition: function () {
         //return node.querySelector('iframe.content') !== null;
         return false;
       },
-      /**
-       * Perform action on added subtree
-       *
-       * @param {DOMNode} root node of added subtree
-       */
       action: function (node) {
         console.log('Del', node);
       }
     },
-    /**
-     * Called when plugin is activated
-     */
     onActivate: function () {
       var manifest, options, handler;
-      if (typeof window.MozActivity === 'undefined') {
+      if (typeof window.MozActivity === 'undefined' && typeof window.Acthesis !== 'undefined') {
         manifest = {
           "activities": {
             "save": {
-              "href": null,            // default to current URL
-              "disposition": 'window', // 'window' (default) or 'inline'
+              "disposition": 'window',
               "filters": {
                 "type": []
               },
               "returnValue": true
             },
             "pick": {
-              "href": null,            // default to current URL
-              "disposition": 'window', // 'window' (default) or 'inline'
+              "disposition": 'window',
               "filters": {
                 "type": []
               },
@@ -171,10 +149,13 @@ if (typeof window.plugins !== "object") {
           }
         };
         options = {
-          "server": window.location.protocol + "//" + window.location.hostname + ":9104/apps/acthesis",
-          //"ws": "ws://cozy.clochix.net:9104/apps/acthesis",
-          postMethod: "message"
+          postMethod: 'message'
         };
+        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+          options.server = 'http://localhost:9250';
+        } else {
+          options.server =  window.location.protocol + "//" + window.location.hostname + "/apps/acthesis";
+        }
         new window.Acthesis(options, manifest);
       }
 
@@ -225,7 +206,7 @@ if (typeof window.plugins !== "object") {
             window.plugins.activities.message = message;
             break;
           default:
-            message.postError("WRANG ACTIVITY");
+            message.postError("WRONG ACTIVITY");
         }
       };
       navigator.mozSetMessageHandler('activity', handler);
@@ -236,9 +217,6 @@ if (typeof window.plugins !== "object") {
       }
 
     },
-    /**
-     * Called when plugin is deactivated
-     */
     onDeactivate: function () {
       //console.log('Plugin sample deactivated');
     }

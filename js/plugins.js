@@ -41,21 +41,23 @@
         window.plugins = {};
       }
       // Observe addition to plugins
-      Object.observe(window.plugins, function (changes) {
-        changes.forEach(function (change) {
-          if (change.type === 'add') {
-            self.activate(change.name);
-          } else if (change.type === 'delete') {
-            self.deactivate(change.name);
-          }
+      if (typeof Object.observe === 'function') {
+        Object.observe(window.plugins, function (changes) {
+          changes.forEach(function (change) {
+            if (change.type === 'add') {
+              self.activate(change.name);
+            } else if (change.type === 'delete') {
+              self.deactivate(change.name);
+            }
+          });
         });
-      });
+      }
       Object.keys(window.plugins).forEach(function (pluginName) {
         if (typeof window.plugins[pluginName].url !== 'undefined') {
           self.loadJS(window.plugins[pluginName].url);
         } else {
           if (window.plugins[pluginName].active) {
-            this.activate(pluginName);
+            self.activate(pluginName);
           }
         }
       });
@@ -124,7 +126,7 @@
       }
     },
     activate: function (key) {
-      var plugin, type, event;
+      var plugin, type, activationEvent;
       plugin = window.plugins[key];
       type = plugin.type;
       plugin.active = true;
@@ -146,11 +148,11 @@
           }
         });
       }
-      event = new CustomEvent("plugin", {"detail": {action: "activate", name: key}});
-      window.dispatchEvent(event);
+      activationEvent = new CustomEvent("plugin", {"detail": {action: "activate", name: key}});
+      window.dispatchEvent(activationEvent);
     },
     deactivate: function (key) {
-      var event,
+      var deactivationEvent,
           plugin = window.plugins[key];
       plugin.active = false;
       if (plugin.listeners !== null) {
@@ -161,8 +163,8 @@
       if (plugin.onDeactivate) {
         plugin.onDeactivate();
       }
-      event = new CustomEvent("plugin", {"detail": {action: "deactivate", name: key}});
-      window.dispatchEvent(event);
+      deactivationEvent = new CustomEvent("plugin", {"detail": {action: "deactivate", name: key}});
+      window.dispatchEvent(deactivationEvent);
     },
     merge: function (remote) {
       Object.keys(remote).forEach(function (pluginName) {
@@ -230,9 +232,16 @@
           resolve();
 
         };
+        xhr.ontimeout = function () {
+          reject();
+        };
         xhr.send();
       });
     }
   };
+
+  window.addEventListener('load', function () {
+    root.pluginUtils.init();
+  });
 
 })(this);

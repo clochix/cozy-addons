@@ -23,18 +23,23 @@ if (typeof window.plugins !== "object") {
   window.plugins.calendar = {
     name: "Calendar",
     active: true,
+    /*
     onActivate: function () {
       if (typeof window.MozActivity === 'undefined' && typeof window.Acthesis !== 'undefined') {
         var manifest, options;
-        options = {
-          postMethod: 'message',
-          server: 'http://127.0.0.1:9250',
-          ws: 'ws://127.0.0.1:9250'
-        };
         manifest = { };
+        options = {
+          postMethod: 'message'
+        };
+        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+          options.server = 'http://localhost:9250';
+        } else {
+          options.server =  window.location.protocol + "//" + window.location.hostname + "/apps/acthesis";
+        }
         window.Acthesis(options, manifest);
       }
     },
+    */
     listeners: {
       'MESSAGE_LOADED': function () {
         var message = window.cozyMails.getCurrentMessage();
@@ -63,7 +68,8 @@ if (typeof window.plugins !== "object") {
                 }
                 if (typeof actionbar !== 'undefined') {
                   btn = document.createElement('button');
-                  btn.textContent = 'Add';
+                  btn.setAttribute('class', 'btn btn-default');
+                  btn.textContent = 'Add to my calendar';
                   btn.addEventListener('click', function () {
                     var activity = new window.MozActivity({
                       name: "save",

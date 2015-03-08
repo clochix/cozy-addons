@@ -58,15 +58,17 @@ if (typeof window.plugins !== "object") {
       if (typeof window.MozActivity === 'undefined' && typeof window.Acthesis !== 'undefined') {
         var manifest, options;
         options = {
-          postMethod: 'message',
-          server: 'http://127.0.0.1:9250',
-          ws: 'ws://127.0.0.1:9250'
+          postMethod: 'message'
         };
+        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+          options.server = 'http://localhost:9250';
+        } else {
+          options.server =  window.location.protocol + "//" + window.location.hostname + "/apps/acthesis";
+        }
         manifest = {
           "activities": {
             "save": {
-              "href": null,        // default to current URL
-              "disposition": null, // 'window' (default) or 'inline'
+              "disposition": 'hidden',
               "filters": {
                 "type": ['ical']
               },
