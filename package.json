@@ -1,13 +1,13 @@
 {
   "name": "cozy-addons",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "Sample addons for CozyCloud Web Applications",
-  "main": "index.js",
+  "main": "server.js",
   "dependencies": {
-    "acthesis": "^0.1.0"
+    "express": "^4.12.2"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node server.js"
   },
   "repository": {
     "type": "git",
@@ -19,7 +19,14 @@
     "url": "https://github.com/clochix/cozy-addons/issues"
   },
   "homepage": "https://github.com/clochix/cozy-addons",
-  "scripts": {
-    "openpgp": "uglifyjs openpgp/init.js openpgp/lib/openpgp.min.js > dist/openpgp.js"
-  }
+  "icon-path": "addons.png",
+  "keywords": [
+    "cozycloud",
+    "addons"
+  ],
+  "contributors": [
+    "Clochix"
+  ],
+  "cozy-permissions": {},
+  "cozy-displayName": "Addons"
 }
