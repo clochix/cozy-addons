@@ -110,12 +110,12 @@
           Object.keys(window.plugins).forEach(function (pluginName) {
             var pluginConf = window.plugins[pluginName];
             if (pluginConf.active) {
-              if (pluginConf.onAdd !== null) {
+              if (typeof pluginConf.onAdd === "function") {
                 if (pluginConf.onAdd.condition.bind(pluginConf)(document.body)) {
                   pluginConf.onAdd.action.bind(pluginConf)(document.body);
                 }
               }
-              if (pluginConf.onDelete !== null) {
+              if (typeof pluginConf.onDelete === "function") {
                 if (pluginConf.onDelete.condition.bind(pluginConf)(document.body)) {
                   pluginConf.onDelete.action.bind(pluginConf)(document.body);
                 }
@@ -130,7 +130,7 @@
       plugin = window.plugins[key];
       type = plugin.type;
       plugin.active = true;
-      if (plugin.listeners !== null) {
+      if (typeof plugin.listeners !== "undefined") {
         Object.keys(plugin.listeners).forEach(function (event) {
           window.addEventListener(event, plugin.listeners[event].bind(plugin));
         });
@@ -155,7 +155,7 @@
       var deactivationEvent,
           plugin = window.plugins[key];
       plugin.active = false;
-      if (plugin.listeners !== null) {
+      if (typeof plugin.listeners !== "undefined") {
         Object.keys(plugin.listeners).forEach(function (event) {
           window.removeEventListener(event, plugin.listeners[event].bind(plugin));
         });
@@ -170,7 +170,7 @@
       Object.keys(remote).forEach(function (pluginName) {
         var pluginConf = remote[pluginName],
             local      = window.plugins[pluginName];
-        if (local !== null) {
+        if (typeof local !== "undefined") {
           local.active = pluginConf.active;
         } else {
           if (typeof pluginConf.url === 'undefined') {
@@ -182,7 +182,7 @@
       });
       Object.keys(window.plugins).forEach(function (pluginName) {
         var pluginConf = window.plugins[pluginName];
-        if (remote[pluginName] === null) {
+        if (typeof remote[pluginName] === "undefined") {
           remote[pluginName] = {
             name: pluginConf.name,
             active: pluginConf.active
