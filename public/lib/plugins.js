@@ -126,7 +126,7 @@
       }
     },
     activate: function (key) {
-      var plugin, type, activationEvent;
+      var plugin, type, activationEvent, self = this;
       plugin = window.plugins[key];
       type = plugin.type;
       plugin.active = true;
@@ -143,7 +143,7 @@
           var pluginConf = window.plugins[pluginName];
           if (pluginName !== key) {
             if (pluginConf.type === type && pluginConf.active) {
-              this.deactivate(pluginName);
+              self.deactivate(pluginName);
             }
           }
         });

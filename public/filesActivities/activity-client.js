@@ -1,0 +1,1 @@
+../node_modules/acthesis/lib/activity-client.js
