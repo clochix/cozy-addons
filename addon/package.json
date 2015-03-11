@@ -1,0 +1,13 @@
+{
+  "title": "Addons for CozyCloud",
+  "name": "cozy-addons",
+  "version": "0.0.1",
+  "description": "Add addons into Cozy Cloud apps",
+  "main": "index.js",
+  "author": "Clochix (http://clochix.net)",
+  "engines": {
+    "firefox": ">=38.0a1",
+    "fennec": ">=38.0a1"
+  },
+  "license": "GPLv3"
+}
