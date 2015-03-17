@@ -21,6 +21,81 @@ if (typeof window.plugins !== "object") {
     }
     return actionbar;
   }
+  function generate() {
+    var body, win, accounts, select = '', privateKey, btnSave, btnGenerate;
+    accounts = window.require('stores/account_store').getAll().toJS();
+    Object.keys(accounts).forEach(function (key) {
+      var login = accounts[key].login;
+      select += '<option value="' + login + '">' + login + '</option>';
+    });
+    body = '<form class="form-horizontal">' +
+    '<div class="form-group">' +
+    '  <label class="col-sm-2 col-sm-offset-2 control-label" for="size">Size</label>' +
+    '  <div class="col-sm-8">' +
+    '    <input type="range" class="form-control" name="size" min="1024" max="4096" step="1024" />' +
+    '  </div>' +
+    '</div>' +
+    '<div class="form-group">' +
+    '  <label class="col-sm-2 col-sm-offset-2 control-label" for="user">User</label>' +
+    '  <div class="col-sm-8">' +
+    '    <select name="user" />' +
+    select +
+    '    </select>' +
+    '  </div>' +
+    '</div>' +
+    '<div class="form-group">' +
+    '  <label class="col-sm-2 col-sm-offset-2 control-label" for="passphrase">Passphrase</label>' +
+    '  <div class="col-sm-8">' +
+    '    <input type="text" class="form-control" name="passphrase" />' +
+    '  </div>' +
+    '</div>' +
+    '<div class="form-group">' +
+    '  <button class="btn btn-cozy" name="generate">Generate</button>' +
+    '  <button class="btn btn-cozy" name="save" disabled>Save</button>' +
+    '</div>' +
+    '<div class="form-group">' +
+    '  <div class="col-sm-10">' +
+    '    <pre name="key"></pre>' +
+    '  </div>' +
+    '</div>' +
+    '</form>';
+    win = window.plugins.helpers.modal({title: "Generate private key", body: body});
+    btnSave = win.querySelector('[name=save]');
+    btnGenerate = win.querySelector('[name=generate]');
+    btnSave.addEventListener('click', function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      wallet.privateKeys.push(privateKey);
+      alert("Key added", privateKey);
+      wallet.store();
+      console.log(wallet.getAllKeys());
+    });
+    btnGenerate.addEventListener('click', function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      btnGenerate.disabled = true;
+      btnGenerate.innerHTML = "<img src='images/spinner.svg' alt='spinner' className='spin' />";
+      var options = {
+        numBits: win.querySelector('[name=size]').value,
+        userId: win.querySelector('[name=user]').value,
+        passphrase: win.querySelector('[name=passphrase]').value
+      };
+      openpgp.key.generate(options).then(function (key) {
+        console.log("key", key);
+        privateKey = key;
+        win.querySelector('[name=key]').textContent = key.armor();
+        btnSave.disabled = false;
+        btnGenerate.textContent = 'Generate';
+        btnGenerate.disabled = false;
+      }).catch(function (err) {
+        win.querySelector('[name=key]').textContent = "Error: " + err;
+        btnGenerate.textContent = 'Generate';
+        btnGenerate.disabled = false;
+      });
+    });
+  }
+  window.generate = generate;
+
   function doCheck(msg, key) {
     var pubKeys1 = {}, pubKeys2 = [];
     function format(pubkey) {
