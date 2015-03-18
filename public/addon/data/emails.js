@@ -1,7 +1,7 @@
 //jshint browser: true
 [
   "/apps/addons/lib/plugins.js", "/apps/addons/lib/activity-client.js",
-  "/apps/addons/emailActivities/init.js",
+  "/apps/addons/emailsActivities/init.js",
   "/apps/addons/emailsCalendar/ical.js",
   "/apps/addons/emailsCalendar/init.js",
   "/apps/addons/emailsOpenPGP/lib/openpgp.js",

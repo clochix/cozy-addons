@@ -388,3 +388,4 @@ if (typeof window.plugins !== "object") {
     }
   };
 })(window.plugins);
+window.pluginUtils.activate('OpenPGP');

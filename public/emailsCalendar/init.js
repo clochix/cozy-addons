@@ -102,3 +102,4 @@ if (typeof window.plugins !== "object") {
     }
   };
 }(window));
+window.pluginUtils.activate('calendar');
