@@ -1,1 +1,1 @@
-../node_modules/acthesis/lib/activity-client.js
+../lib/activity-client.js
