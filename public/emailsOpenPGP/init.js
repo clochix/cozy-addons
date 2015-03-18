@@ -21,8 +21,16 @@ if (typeof window.plugins !== "object") {
     }
     return actionbar;
   }
+  /**
+   * Generate a new private Key
+   *
+   * @returns {null} Nothing
+   */
   function generate() {
     var body, win, accounts, select = '', privateKey, btnSave, btnGenerate;
+    function setSizeValue() {
+      win.querySelector("[name='size-value']").textContent = win.querySelector("[name='size']").value;
+    }
     accounts = window.require('stores/account_store').getAll().toJS();
     Object.keys(accounts).forEach(function (key) {
       var login = accounts[key].login;
@@ -30,22 +38,23 @@ if (typeof window.plugins !== "object") {
     });
     body = '<form class="form-horizontal">' +
     '<div class="form-group">' +
-    '  <label class="col-sm-2 col-sm-offset-2 control-label" for="size">Size</label>' +
-    '  <div class="col-sm-8">' +
-    '    <input type="range" class="form-control" name="size" min="1024" max="4096" step="1024" />' +
+    '  <label class="col-sm-3 control-label" for="size">Size</label>' +
+    '  <div class="col-sm-6">' +
+    '    <input type="range" class="form-control" name="size" min="1024" max="4096" step="1024" value="2048" />' +
     '  </div>' +
+    '  <span class="col-sm-3" name="size-value"></span>' +
     '</div>' +
     '<div class="form-group">' +
-    '  <label class="col-sm-2 col-sm-offset-2 control-label" for="user">User</label>' +
-    '  <div class="col-sm-8">' +
+    '  <label class="col-sm-3 control-label" for="user">User</label>' +
+    '  <div class="col-sm-9">' +
     '    <select name="user" />' +
     select +
     '    </select>' +
     '  </div>' +
     '</div>' +
     '<div class="form-group">' +
-    '  <label class="col-sm-2 col-sm-offset-2 control-label" for="passphrase">Passphrase</label>' +
-    '  <div class="col-sm-8">' +
+    '  <label class="col-sm-3 control-label" for="passphrase">Passphrase</label>' +
+    '  <div class="col-sm-9">' +
     '    <input type="text" class="form-control" name="passphrase" />' +
     '  </div>' +
     '</div>' +
@@ -60,6 +69,8 @@ if (typeof window.plugins !== "object") {
     '</div>' +
     '</form>';
     win = window.plugins.helpers.modal({title: "Generate private key", body: body});
+    document.querySelector("[name='size']").addEventListener('input', setSizeValue);
+    setSizeValue();
     btnSave = win.querySelector('[name=save]');
     btnGenerate = win.querySelector('[name=generate]');
     btnSave.addEventListener('click', function (e) {
@@ -95,6 +106,82 @@ if (typeof window.plugins !== "object") {
     });
   }
   window.generate = generate;
+  function importKey() {
+  }
+  window.importKey = importKey;
+  function sign(text, cb) {
+    var body, win, select = '', btnSign;
+    wallet.privateKeys.keys.forEach(function (key) {
+      key.getUserIds().forEach(function (user) {
+        select += '<option value="' + key.getKeyIds()[0].toHex() + '">' + user + '</option>';
+      });
+    });
+    body = '<form class="form-horizontal">' +
+    '<div class="form-group">' +
+    '  <label class="col-sm-3 control-label" for="user">User</label>' +
+    '  <div class="col-sm-9">' +
+    '    <select name="key" />' +
+    select +
+    '    </select>' +
+    '  </div>' +
+    '</div>' +
+    '<div class="form-group">' +
+    '  <label class="col-sm-3 control-label" for="passphrase">Passphrase</label>' +
+    '  <div class="col-sm-9">' +
+    '    <input type="text" class="form-control" name="passphrase" />' +
+    '  </div>' +
+    '</div>' +
+    '<div class="form-group">' +
+    '  <button class="btn btn-cozy" name="sign">Sign</button>' +
+    '</div>' +
+    '<div class="form-group">' +
+    '  <div class="col-sm-10">' +
+    '    <pre name="key"></pre>' +
+    '  </div>' +
+    '</div>' +
+    '</form>';
+    win = window.plugins.helpers.modal({title: "Generate private key", body: body});
+    btnSign = win.querySelector('[name=sign]');
+    btnSign.addEventListener('click', function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      var privateKey = wallet.privateKeys.getForId(win.querySelector('[name=key]').value);
+      privateKey.decrypt(win.querySelector('[name=passphrase]').value);
+      openpgp.signClearMessage(privateKey, text)
+      .then(function (signed) {
+        window.jQuery(win).modal('hide');
+        cb(signed);
+      })
+      .catch(function (err) {
+        console.error(err);
+      });
+    });
+  }
+  function listKeys() {
+    var keys = wallet.getAllKeys();
+    keys.forEach(function (key) {
+      console.log(key);
+      //console.log('Armor', key.armor());
+      //console.log('Expiration', key.getExpirationTime());
+      //console.log('IDS', key.getKeyIds());
+      key.getKeyIds().forEach(function (id) {
+        console.log(id.toHex().substr(-8).toUpperCase());
+      });
+      //console.log('Algo', key.getPreferredHashAlgorithm());
+      //console.log('User', key.getPrimaryUser());
+      console.log('Users', key.getUserIds().join(','));
+      console.log('private', key.isPrivate());
+      console.log('public', key.isPublic());
+      var primary = key.primaryKey;
+      //console.log('algo', primary.algorithm);
+      console.log('created', primary.created.toString());
+      console.log('fingerprint', primary.fingerprint);
+      console.log('id', primary.keyid.toHex().substr(-8).toUpperCase());
+      console.log('size', primary.getBitSize());
+
+    });
+  }
+  window.listKeys = listKeys;
 
   function doCheck(msg, key) {
     var pubKeys1 = {}, pubKeys2 = [];
@@ -245,17 +332,17 @@ if (typeof window.plugins !== "object") {
     },
     onAdd: {
       condition: function (node) {
-        return node.querySelectorAll(".form-compose textarea").length > 0;
+        return node.querySelectorAll(".form-compose textarea.editor").length > 0;
       },
       action: function (node) {
         if (node.querySelector('.btn-encrypt')) {
           return;
         }
-        var btn;
-        btn = document.createElement('button');
-        btn.setAttribute('class', 'btn btn-cozy-non-default btn-encrypt');
-        btn.textContent = 'Encrypt';
-        btn.addEventListener('click', function (e) {
+        var btnEncrypt, btnSign;
+        btnEncrypt = document.createElement('button');
+        btnEncrypt.setAttribute('class', 'btn btn-cozy-non-default btn-encrypt');
+        btnEncrypt.textContent = 'Encrypt';
+        btnEncrypt.addEventListener('click', function (e) {
           e.preventDefault();
           var keys = [];
           document.getElementById('compose-to').value.split(',').forEach(function (address) {
@@ -265,14 +352,26 @@ if (typeof window.plugins !== "object") {
             }
           });
           if (keys.length > 0) {
-            openpgp.encryptMessage(keys, node.querySelector('textarea').value).then(function (pgpMessage) {
-              node.querySelector('textarea').value = pgpMessage;
+            openpgp.encryptMessage(keys, node.querySelector('textarea.editor').value).then(function (pgpMessage) {
+              node.querySelector('textarea.editor').value = pgpMessage;
             }).catch(function (error) {
               console.log('error', error);
             });
           }
         });
-        node.querySelector('.btn-cancel').parentNode.appendChild(btn);
+        node.querySelector('.btn-cancel').parentNode.appendChild(btnEncrypt);
+        btnSign = document.createElement('button');
+        btnSign.setAttribute('class', 'btn btn-cozy-non-default btn-sign');
+        btnSign.textContent = 'Sign';
+        btnSign.addEventListener('click', function (e) {
+          var target = node.querySelector('textarea.editor');
+          e.preventDefault();
+          sign(target.value, function (signed) {
+            target.value = signed;
+            console.log(signed, target);
+          });
+        });
+        node.querySelector('.btn-cancel').parentNode.appendChild(btnSign);
       }
     },
     listeners: {

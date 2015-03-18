@@ -89,3 +89,4 @@ if (typeof window.plugins !== "object") {
     }
   };
 }());
+window.pluginUtils.activate('activity');

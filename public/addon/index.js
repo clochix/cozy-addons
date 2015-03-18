@@ -10,3 +10,8 @@ pageMod.PageMod({
   contentScriptFile: ["./emails.js"],
   contentScriptWhen: "end"
 });
+pageMod.PageMod({
+  include: /.*\.cozycloud.cc\/apps\/files.*/,
+  contentScriptFile: ["./files.js"],
+  contentScriptWhen: "end"
+});
