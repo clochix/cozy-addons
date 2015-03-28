@@ -20,6 +20,12 @@ body {
 a {
   color: #0F0;
 }
+#templates {
+  display: none;
+}
+ul.addons {
+  list-style-type: none;
+}
     </style>
   </head>
   <body>
@@ -42,9 +48,23 @@ a {
             <li>utiliser PGP pour signer et chiffrer vos messages ;</li>
             <li>enregistrer dans l'application Files les pièces jointes d'un message ;</li>
             <li>attacher à un nouveau message un fichier depuis Files ;</li>
-        </li>
+        </ul>
       </ul>
     </p>
     <p>Le code source de ces extensions est <a href="https://github.com/clochix/cozy-addons">disponible sur Github</a>.</p>
+
+    <div id="templates">
+      <div id="apps">
+        <h3></h3>
+        <ul class="addons">
+        </ul>
+      </div>
+      <div id="addon">
+        <li><input type="checkbox"></input> <label></label></li>
+      </div>
+    </div>
+    <div id="select">
+    </div>
+    <script type="text/javascript" src="index.js"></script>
   </body>
 </html>

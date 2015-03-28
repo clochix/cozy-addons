@@ -1,0 +1,4 @@
+{
+  "description": "Allow to share calendar invites received by email",
+  "scripts": ["ical.js", "init.js"]
+}
