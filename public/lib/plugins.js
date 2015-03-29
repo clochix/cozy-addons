@@ -190,11 +190,14 @@
         }
       });
     },
-    loadJS: function (url) {
+    loadJS: function (url, onload) {
       var script = document.createElement('script');
       script.type  = 'text/javascript';
       script.async = true;
       script.src   = url;
+      if (typeof onload === 'function') {
+        script.onload = onload;
+      }
       document.body.appendChild(script);
     },
     load: function (url) {
@@ -237,11 +240,32 @@
         };
         xhr.send();
       });
+    },
+    loadRegistered: function () {
+      var app, xhr;
+      app = /\/apps\/([^\/]*)\//.exec(window.location);
+      if (app !== null) {
+        app = app[1];
+        xhr = new XMLHttpRequest();
+        app = 'emails';
+        xhr.open('GET', '/apps/addons/api/registered/' + app, true);
+        xhr.onload = function () {
+          var addons = JSON.parse(xhr.responseText);
+          addons.scripts.map(function (script) {
+            root.pluginUtils.loadJS('/apps/addons/api/addons/' + script);
+          });
+        };
+        xhr.onerror = function (e) {
+          console.error("Request failed : " + e.target.status);
+        };
+        xhr.send();
+      }
     }
   };
 
   window.addEventListener('load', function () {
     root.pluginUtils.init();
+    root.pluginUtils.loadRegistered();
   });
 
 })(this);

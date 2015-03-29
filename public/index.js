@@ -70,7 +70,7 @@
                   checkbox = qs('input[type=checkbox]', li),
                   label    = qs('label', li);
               label.setAttribute('for', app);
-              label.innerHTML  = addon.path + ' : ' + (addon.description);
+              label.innerHTML  = addon.path + ' : ' + (addon.description || '');
               checkbox.name    = app;
               checkbox.value   = addon.path;
               checkbox.checked = registered[app].indexOf(addon.path) !== -1;

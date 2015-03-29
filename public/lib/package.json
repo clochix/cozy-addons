@@ -1,0 +1,3 @@
+{
+  "scripts": ["Object.observe.poly.js", "plugins.js", "activity-client.js"]
+}

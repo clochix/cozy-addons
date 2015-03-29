@@ -82,22 +82,30 @@
             scripts = JSON.parse(data).scripts.map(function (script) {
               return basePath + script;
             });
-            cb(null, UglifyJS.minify(scripts));
+            cb(null, UglifyJS.minify(scripts).code);
           }
         });
       } else {
-        cb(null, UglifyJS.minify(basePath + 'init.js'));
+        cb(null, UglifyJS.minify(basePath + 'init.js').code);
       }
     });
   }
 
   router.route('/addons/:name')
     .get(function (req, res) {
-      getCode(req.params.name, function (err, code) {
-        if (err) {
-          console.log(err);
+      var name = req.params.name;
+      fs.stat('public/' + name, function (errStat, stats) {
+        if (errStat || typeof stats === 'undefined' || !stats.isDirectory()) {
+          res.status(404).end();
+        } else {
+          getCode(name, function (err, code) {
+            if (err) {
+              console.error(err);
+              res.status(500).send(err);
+            }
+            res.send(code);
+          });
         }
-        res.send(code);
       });
     });
 
@@ -115,12 +123,11 @@
 
   router.route('/registered/:name')
     .get(function (req, res) {
-      model.all(null, function (err, result) {
+      model.request('byApp', {key: req.params.name}, function (err, result) {
         if (err) {
           res.send(err);
         } else {
-
-          res.json(result);
+          res.json(result[0]);
         }
       });
     })
@@ -132,8 +139,8 @@
           if (result.length === 0) {
             model.create({app: req.params.name, scripts: req.body}, function (errCreate, resCreate) {
               if (err) {
-                console.log("Error creating", errCreate);
-                res.send(errCreate);
+                console.error("Error creating", errCreate);
+                res.status(500).send(errCreate);
               } else {
                 res.json(resCreate);
               }
@@ -141,8 +148,8 @@
           } else {
             model.updateAttributes(result[0]._id, {scripts: req.body}, function (errCreate, resCreate) {
               if (err) {
-                console.log("Error saving", errCreate);
-                res.send(errCreate);
+                console.error("Error saving", errCreate);
+                res.status(500).send(errCreate);
               } else {
                 res.json(resCreate);
               }
