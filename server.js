@@ -124,10 +124,22 @@
   router.route('/registered/:name')
     .get(function (req, res) {
       model.request('byApp', {key: req.params.name}, function (err, result) {
+        var scripts;
         if (err) {
           res.send(err);
         } else {
-          res.json(result[0]);
+          if (typeof req.query.raw !== 'undefined') {
+            scripts = result[0].scripts;
+            async.map(scripts, getCode, function (errScript, code) {
+              if (errScript) {
+                res.status(500).send(errScript);
+              } else {
+                res.type('text/javascript').send(code.join("\n"));
+              }
+            });
+          } else {
+            res.json(result[0]);
+          }
         }
       });
     })

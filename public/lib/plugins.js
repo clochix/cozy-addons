@@ -242,23 +242,10 @@
       });
     },
     loadRegistered: function () {
-      var app, xhr;
+      var app;
       app = /\/apps\/([^\/]*)\//.exec(window.location);
       if (app !== null) {
-        app = app[1];
-        xhr = new XMLHttpRequest();
-        app = 'emails';
-        xhr.open('GET', '/apps/addons/api/registered/' + app, true);
-        xhr.onload = function () {
-          var addons = JSON.parse(xhr.responseText);
-          addons.scripts.map(function (script) {
-            root.pluginUtils.loadJS('/apps/addons/api/addons/' + script);
-          });
-        };
-        xhr.onerror = function (e) {
-          console.error("Request failed : " + e.target.status);
-        };
-        xhr.send();
+        root.pluginUtils.loadJS('/apps/addons/api/registered/' + app[1] + '?raw=true');
       }
     }
   };
