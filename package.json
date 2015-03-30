@@ -31,6 +31,10 @@
   "contributors": [
     "Clochix"
   ],
-  "cozy-permissions": {},
+  "cozy-permissions": {
+    "Addons": { 
+      "description": "Manage addons"
+    }
+  },
   "cozy-displayName": "Addons"
 }
