@@ -250,9 +250,15 @@
     }
   };
 
-  window.addEventListener('load', function () {
+  function init() {
     root.pluginUtils.init();
     root.pluginUtils.loadRegistered();
-  });
+  }
+
+  if (document.readyState === "complete") {
+    init();
+  } else {
+    window.addEventListener('load', init);
+  }
 
 })(this);
