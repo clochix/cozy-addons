@@ -47,12 +47,14 @@
     xhr.send(data);
   }
   get('api/registered', function (err, xhr) {
-    var registered = {};
+    var result, registered = {};
     if (!err) {
-      JSON.parse(xhr.responseText).map(function (reg) {
-        registered[reg.app] = reg.scripts;
-      });
-      console.log(registered);
+      result = JSON.parse(xhr.responseText);
+      if (Array.isArray(result)) {
+        result.map(function (reg) {
+          registered[reg.app] = reg.scripts;
+        });
+      }
       get('api/addons', function (errAddons, xhrAddons) {
         var addons, target = document.getElementById('select');
         if (!errAddons) {
