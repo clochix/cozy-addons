@@ -8,7 +8,8 @@
       async      = require('async'),
       bodyParser = require('body-parser'),
       model      = require('./lib/model'),
-      UglifyJS   = require("uglify-js"),
+      UglifyJS   = require('uglify-js'),
+      request    = require('request'),
       app, port, host, router;
   process.on('uncaughtException', function (err) {
     console.error("Uncaught Exception");
@@ -70,25 +71,36 @@
     });
 
   function getCode(name, cb) {
-    var basePath    = 'public/' + name + '/',
-        packagePath = basePath + 'package.json';
-    fs.exists(packagePath, function (exists) {
-      var scripts;
-      if (exists) {
-        fs.readFile(packagePath, function (errRead, data) {
-          if (errRead) {
-            cb(errRead);
-          } else {
-            scripts = JSON.parse(data).scripts.map(function (script) {
-              return basePath + script;
-            });
-            cb(null, UglifyJS.minify(scripts).code);
-          }
-        });
-      } else {
-        cb(null, UglifyJS.minify(basePath + 'init.js').code);
-      }
-    });
+    var basePath, packagePath;
+    if (name.substr(0, 4) === 'http') {
+      request(name, function (error, response, body) {
+        if (!error && response.statusCode === 200) {
+          cb(null, UglifyJS.minify(body, {fromString: true}).code);
+        } else {
+          cb(error);
+        }
+      });
+    } else {
+      basePath    = 'public/' + name + '/';
+      packagePath = basePath + 'package.json';
+      fs.exists(packagePath, function (exists) {
+        var scripts;
+        if (exists) {
+          fs.readFile(packagePath, function (errRead, data) {
+            if (errRead) {
+              cb(errRead);
+            } else {
+              scripts = JSON.parse(data).scripts.map(function (script) {
+                return basePath + script;
+              });
+              cb(null, UglifyJS.minify(scripts).code);
+            }
+          });
+        } else {
+          cb(null, UglifyJS.minify(basePath + 'init.js').code);
+        }
+      });
+    }
   }
 
   router.route('/addons/:name')
