@@ -8,6 +8,7 @@
       async      = require('async'),
       bodyParser = require('body-parser'),
       model      = require('./lib/model'),
+      CleanCSS   = require('clean-css'),
       UglifyJS   = require('uglify-js'),
       request    = require('request'),
       app, port, host, router;
@@ -103,6 +104,35 @@
     }
   }
 
+  function getCss(name, cb) {
+    var basePath, packagePath;
+    if (name.substr(0, 4) === 'http') {
+      request(name, function (error, response, body) {
+        if (!error && response.statusCode === 200) {
+          new CleanCSS().minify(body, cb);
+        } else {
+          cb(error);
+        }
+      });
+    } else {
+      basePath    = 'public/' + name + '/';
+      packagePath = basePath + 'package.json';
+      fs.exists(packagePath, function (exists) {
+        if (exists) {
+          fs.readFile(packagePath, function (errRead, data) {
+            if (errRead) {
+              cb(errRead);
+            } else {
+              new CleanCSS({root: basePath}).minify(JSON.parse(data).css, cb);
+            }
+          });
+        } else {
+          cb(null, '');
+        }
+      });
+    }
+  }
+
   router.route('/addons/:name')
     .get(function (req, res) {
       var name = req.params.name;
@@ -136,19 +166,34 @@
   router.route('/registered/:name')
     .get(function (req, res) {
       model.request('byApp', {key: req.params.name}, function (err, result) {
-        var scripts;
+        var scripts, styles = '';
         if (err) {
           res.send(err);
         } else {
           if (typeof req.query.raw !== 'undefined') {
             scripts = result[0].scripts;
-            async.map(scripts, getCode, function (errScript, code) {
-              if (errScript) {
-                res.status(500).send(errScript);
-              } else {
-                res.type('text/javascript').send(code.join("\n"));
-              }
-            });
+            if (req.query.raw === 'css') {
+              async.map(scripts, getCss, function (errScript, code) {
+                if (errScript) {
+                  res.status(500).send(errScript);
+                } else {
+                  code.map(function (style) {
+                    if (style !== '') {
+                      styles += style.styles + "\n";
+                    }
+                  });
+                  res.type('text/css').send(styles);
+                }
+              });
+            } else {
+              async.map(scripts, getCode, function (errScript, code) {
+                if (errScript) {
+                  res.status(500).send(errScript);
+                } else {
+                  res.type('text/javascript').send(code.join("\n"));
+                }
+              });
+            }
           } else {
             res.json(result[0]);
           }

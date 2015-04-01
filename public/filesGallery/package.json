@@ -1,0 +1,5 @@
+{
+  "description": "Images slideshow inside Files",
+  "scripts": ["init.js", "baguetteBox.min.js"],
+  "css": ["baguetteBox.min.css"]
+}

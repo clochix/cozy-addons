@@ -200,6 +200,15 @@
       }
       document.body.appendChild(script);
     },
+    loadCSS: function (url, onload) {
+      var link = document.createElement('link');
+      link.setAttribute('rel', 'stylesheet');
+      link.href = url;
+      if (typeof onload === 'function') {
+        link.onload = onload;
+      }
+      document.head.appendChild(link);
+    },
     load: function (url) {
       // Get absolute path of this script, allowing to load plugins relatives
       // to it
@@ -245,7 +254,8 @@
       var app;
       app = /\/apps\/([^\/]*)\//.exec(window.location);
       if (app !== null) {
-        root.pluginUtils.loadJS('/apps/addons/api/registered/' + app[1] + '?raw=true');
+        root.pluginUtils.loadJS('/apps/addons/api/registered/' + app[1] + '?raw=js');
+        root.pluginUtils.loadCSS('/apps/addons/api/registered/' + app[1] + '?raw=css');
       }
     }
   };
