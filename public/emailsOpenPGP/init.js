@@ -6,16 +6,17 @@ if (typeof window.plugins !== "object") {
 (function (root) {
   "use strict";
   var wallet;
-  function render(txt) {
+  // level: success, info, warning, danger
+  function render(txt, level) {
     var actionbar, container;
-    container = document.querySelector('.messageToolbox + .row');
+    container = document.querySelector('article.active iframe, article.active .preview').parentNode
     actionbar = container.querySelector('.signature');
     if (actionbar) {
       actionbar.textContent = txt;
+      actionbar.setAttribute('class', 'signature alert-' + (level || 'info'));
     } else {
       actionbar = document.createElement('div');
-      actionbar.classList.add('content-action');
-      actionbar.classList.add('signature');
+      actionbar.setAttribute('class', 'signature alert-' + (level || 'info'));
       actionbar.textContent = txt;
       container.insertBefore(actionbar, container.firstChild);
     }
@@ -209,8 +210,9 @@ if (typeof window.plugins !== "object") {
           name     = pubkeyId.substr(-8).toUpperCase() + " " + pubKeys1[pubkeyId].userNames,
           actionbar, btn;
       if (verify.valid === true) {
-        actionbar = render('Good signature by key ' + name);
+        actionbar = render('Good signature by key ' + name, 'success');
         btn = document.createElement('button');
+        btn.setAttribute('class', 'btn btn-xs btn-success')
         btn.textContent = 'Add';
         btn.addEventListener('click', function () {
           wallet.publicKeys.importKey(key);
@@ -221,7 +223,7 @@ if (typeof window.plugins !== "object") {
         });
         actionbar.appendChild(btn);
       } else {
-        render('Wrong signature by key ' + name);
+        render('Wrong signature by key ' + name, 'danger');
       }
     });
   }
@@ -243,11 +245,11 @@ if (typeof window.plugins !== "object") {
                 try {
                   doCheck(msg, req.responseText);
                 } catch (e) {
-                  render("Unable to check message signature");
+                  render('Unable to check message signature', 'warning');
                   console.log(e);
                 }
               } else {
-                render("Key not found");
+                render('Key not found', 'warning');
               }
             }
           };
@@ -257,13 +259,13 @@ if (typeof window.plugins !== "object") {
         }
       });
     } catch (e) {
-      render("Unable to check message signature");
+      render('Unable to check message signature', 'warning');
       console.log(e);
     }
   }
   function checkMessage(message) {
     var cleartext, messageId, boundary, xhr;
-    render('Checking signature');
+    render('Checking signature', 'info');
     if (/^-----BEGIN PGP SIGNED MESSAGE/.test(message.text)) {
       cleartext = openpgp.cleartext.readArmored(message.text);
       checkSignatures(cleartext);
@@ -304,7 +306,7 @@ if (typeof window.plugins !== "object") {
           packetlist.read(input);
           checkSignatures(new openpgp.message.Message(packetlist));
         } catch (e) {
-          render("Unable to check message signature");
+          render('Unable to check message signature', 'warning');
           console.log(e);
         }
 
@@ -388,4 +390,6 @@ if (typeof window.plugins !== "object") {
     }
   };
 })(window.plugins);
-window.pluginUtils.activate('OpenPGP');
+if (typeof window.pluginUtils !== 'undefined') {
+  window.pluginUtils.activate('OpenPGP');
+}

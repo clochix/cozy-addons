@@ -5,16 +5,17 @@ if (typeof window.plugins !== "object") {
 (function (root) {
   "use strict";
   var ICAL = root.ICAL;
-  function render(txt) {
+  // level: success, info, warning, danger
+  function render(txt, level) {
     var actionbar, container;
-    container = document.querySelector('.messageToolbox + .row');
+    container = document.querySelector('article.active iframe, article.active .preview').parentNode
     actionbar = container.querySelector('.signature');
     if (actionbar) {
       actionbar.textContent = txt;
+      actionbar.setAttribute('class', 'signature alert-' + (level || 'info'));
     } else {
       actionbar = document.createElement('div');
-      actionbar.classList.add('content-action');
-      actionbar.classList.add('signature');
+      actionbar.setAttribute('class', 'signature alert-' + (level || 'info'));
       actionbar.textContent = txt;
       container.insertBefore(actionbar, container.firstChild);
     }
@@ -58,17 +59,17 @@ if (typeof window.plugins !== "object") {
               if (prop.name === 'method') {
                 method = prop.getFirstValue();
                 if (method === 'REQUEST') {
-                  actionbar = render('This is an invite');
+                  actionbar = render('This is an invite', 'info');
                   isInvite = true;
                 } else if (method === 'REPLY') {
-                  actionbar = render('This is a reply');
+                  actionbar = render('This is a reply', 'info');
                   isReply = true;
                 } else {
-                  actionbar = render("This is an event of type " + method);
+                  actionbar = render("This is an event of type " + method, 'info');
                 }
                 if (typeof actionbar !== 'undefined') {
                   btn = document.createElement('button');
-                  btn.setAttribute('class', 'btn btn-default');
+                  btn.setAttribute('class', 'btn btn-xs btn-info')
                   btn.textContent = 'Add to my calendar';
                   btn.addEventListener('click', function () {
                     var activity = new window.MozActivity({
@@ -102,4 +103,6 @@ if (typeof window.plugins !== "object") {
     }
   };
 }(window));
-window.pluginUtils.activate('calendar');
+if (typeof window.pluginUtils !== 'undefined') {
+  window.pluginUtils.activate('calendar');
+}

@@ -156,4 +156,6 @@ if (typeof window.plugins !== "object") {
     }
   };
 }());
-window.pluginUtils.activate('activity');
+if (typeof window.pluginUtils !== 'undefined') {
+  window.pluginUtils.activate('activity');
+}
