@@ -171,31 +171,39 @@
           res.send(err);
         } else {
           if (typeof req.query.raw !== 'undefined') {
-            scripts = result[0].scripts;
-            if (req.query.raw === 'css') {
-              async.map(scripts, getCss, function (errScript, code) {
-                if (errScript) {
-                  res.status(500).send(errScript);
-                } else {
-                  code.map(function (style) {
-                    if (style !== '') {
-                      styles += style.styles + "\n";
-                    }
-                  });
-                  res.type('text/css').send(styles);
-                }
-              });
+            if (result.length === 0) {
+              res.send('');
             } else {
-              async.map(scripts, getCode, function (errScript, code) {
-                if (errScript) {
-                  res.status(500).send(errScript);
-                } else {
-                  res.type('text/javascript').send(code.join("\n"));
-                }
-              });
+              scripts = result[0].scripts;
+              if (req.query.raw === 'css') {
+                async.map(scripts, getCss, function (errScript, code) {
+                  if (errScript) {
+                    res.status(500).send(errScript);
+                  } else {
+                    code.map(function (style) {
+                      if (style !== '') {
+                        styles += style.styles + "\n";
+                      }
+                    });
+                    res.type('text/css').send(styles);
+                  }
+                });
+              } else {
+                async.map(scripts, getCode, function (errScript, code) {
+                  if (errScript) {
+                    res.status(500).send(errScript);
+                  } else {
+                    res.type('text/javascript').send(code.join("\n"));
+                  }
+                });
+              }
             }
           } else {
-            res.json(result[0]);
+            if (result.length === 0) {
+              res.status(404).end();
+            } else {
+              res.json(result[0]);
+            }
           }
         }
       });
