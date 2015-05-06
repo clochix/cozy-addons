@@ -1,4 +1,4 @@
 {
   "description": "PGP support",
-  "scripts": ["lib/openpgp.js", "init.js"]
+  "scripts": ["init.js"]
 }
