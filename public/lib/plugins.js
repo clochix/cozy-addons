@@ -75,19 +75,24 @@
               return;
             }
             Object.keys(window.plugins).forEach(function (pluginName) {
-              var listener,
+              var listeners,
                   pluginConf = window.plugins[pluginName];
               if (pluginConf.active) {
                 if (action === 'add') {
-                  listener = pluginConf.onAdd;
+                  listeners = pluginConf.onAdd;
                 } else if (action === 'delete') {
-                  listener = pluginConf.onDelete;
+                  listeners = pluginConf.onDelete;
                 }
-                if (typeof listener === 'function') {
-                  if (listener.condition.bind(pluginConf)(node)) {
-                    listener.action.bind(pluginConf)(node);
+                if (!Array.isArray(listeners)) {
+                  listeners = [listeners];
+                }
+                listeners.forEach(function (listener) {
+                  if (typeof listener.condition === 'function') {
+                    if (listener.condition.bind(pluginConf)(node)) {
+                      listener.action.bind(pluginConf)(node);
+                    }
                   }
-                }
+                });
               }
             });
           };
@@ -128,6 +133,9 @@
     activate: function (key) {
       var plugin, type, activationEvent, self = this;
       plugin = window.plugins[key];
+      if (plugin.activated) {
+        return;
+      }
       type = plugin.type;
       plugin.active = true;
       if (typeof plugin.listeners !== "undefined") {
@@ -150,6 +158,7 @@
       }
       activationEvent = new CustomEvent("plugin", {"detail": {action: "activate", name: key}});
       window.dispatchEvent(activationEvent);
+      plugin.activated = true;
     },
     deactivate: function (key) {
       var deactivationEvent,
@@ -165,6 +174,7 @@
       }
       deactivationEvent = new CustomEvent("plugin", {"detail": {action: "deactivate", name: key}});
       window.dispatchEvent(deactivationEvent);
+      plugin.activated = false;
     },
     merge: function (remote) {
       Object.keys(remote).forEach(function (pluginName) {
