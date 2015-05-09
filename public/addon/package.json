@@ -1,14 +1,21 @@
 {
   "title": "Addons for CozyCloud",
   "name": "cozy-addons",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Add addons into Cozy Cloud apps",
   "main": "index.js",
+  "preferences": [{
+    "name": "domains",
+    "title": "List of domains",
+    "description": "Comma-separated list of domains on which injecting scripts",
+    "type": "string",
+    "value": ".*.cozycloud.cc,.*localhost:9104"
+  }],
   "author": "Clochix (http://clochix.net)",
   "engines": {
     "firefox": ">=38.0a1",
     "fennec": ">=38.0a1"
   },
   "license": "GPLv3",
-  "id": "jid1-y24l43e6nM5Qcg"
+  "id": "cozyaddon@jetpack"
 }
