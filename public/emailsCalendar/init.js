@@ -44,7 +44,10 @@ if (typeof window.plugins !== "object") {
     listeners: {
       'MESSAGE_LOADED': function () {
         var message = window.cozyMails.getCurrentMessage();
-        console.log(message);
+        if (!message) {
+          return;
+        }
+        //console.log(message);
         if (Array.isArray(message.alternatives) && message.alternatives.length > 0) {
           message.alternatives.forEach(function (alternative) {
             var jcalData, comp, isInvite, isReply, method, actionbar, btn;

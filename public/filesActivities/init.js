@@ -68,7 +68,7 @@ if (typeof window.plugins !== "object") {
           var ready = document.getElementById('files') !== null;
           if (ready) {
             clearInterval(wait);
-            win = window.plugins.helpers.modal({'body': treeDom, onClose: onClose});
+            win = window.pluginsHelpers.modal({'body': treeDom, onClose: onClose});
             console.log(win);
           }
         }, 100);
@@ -128,19 +128,19 @@ if (typeof window.plugins !== "object") {
       }
     },
     onActivate: function () {
-      var manifest, options, handler;
+      var manifest, options, handler, table;
       if (typeof window.MozActivity === 'undefined' && typeof window.Acthesis !== 'undefined') {
         manifest = {
           "activities": {
             "save": {
-              "disposition": 'window',
+              "disposition": 'inline',
               "filters": {
                 "type": []
               },
               "returnValue": true
             },
             "pick": {
-              "disposition": 'window',
+              "disposition": 'inline',
               "filters": {
                 "type": []
               },
@@ -216,6 +216,10 @@ if (typeof window.plugins !== "object") {
         console.log("[provider] No pending activities");
       }
 
+      table = document.getElementById('table-items');
+      if (table) {
+        table.addEventListener('click', onClickHandler);
+      }
     },
     onDeactivate: function () {
       //console.log('Plugin sample deactivated');

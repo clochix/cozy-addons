@@ -60,11 +60,11 @@ if (typeof window.plugins !== "object") {
     },
     onAdd: {
       condition: function (node) {
-        return node.querySelectorAll("[data-file-url], .file-picker").length > 0;
+        return node.querySelectorAll("article.active footer .attachments .mime + a, .file-picker").length > 0;
       },
       action: function (node) {
         var attachments, pickers;
-        attachments = node.querySelectorAll("[data-file-url]");
+        attachments = node.querySelectorAll("article.active footer .attachments .mime + a");
         Array.prototype.forEach.call(attachments, function (elmt) {
           var icon = document.createElement('a');
           icon.style.paddingLeft = '.5em';
@@ -73,7 +73,7 @@ if (typeof window.plugins !== "object") {
             event.stopPropagation();
             event.preventDefault();
             var xhr = new XMLHttpRequest();
-            xhr.open("GET", elmt.dataset.fileUrl, true);
+            xhr.open("GET", elmt.href, true);
             xhr.responseType = "blob";
             xhr.onload = function () {
               var activity, reader;
@@ -82,7 +82,7 @@ if (typeof window.plugins !== "object") {
                 activity = new window.MozActivity({
                   name: "save",
                   data: {
-                    url: elmt.dataset.fileUrl,
+                    url: elmt.href,
                     fileName: elmt.dataset.fileName,
                     fileType: elmt.dataset.fileType,
                     blob: reader.result
@@ -102,7 +102,7 @@ if (typeof window.plugins !== "object") {
             };
             xhr.send();
           });
-          elmt.parentNode.querySelector('.file-actions').appendChild(icon);
+          elmt.parentNode.appendChild(icon);
 
         });
         pickers = node.querySelectorAll(".file-picker");
@@ -124,25 +124,31 @@ if (typeof window.plugins !== "object") {
               console.log("[client] Activity successfuly handled");
               console.log('[client]', this.result);
               function dataURItoBlob(dataURI) {
-                var byteString, mimeString, ia, i;
+                var byteString, mimeString, res, i;
                 if (dataURI.split(',')[0].indexOf('base64') >= 0) {
                   byteString = atob(dataURI.split(',')[1]);
                 } else {
                   byteString = window.unescape(dataURI.split(',')[1]);
                 }
-                mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0];
-                console.log(mimeString);
-                ia = new Uint8Array(byteString.length);
-                for (i = 0; i < byteString.length; i++) {
-                  ia[i] = byteString.charCodeAt(i);
+                res = {
+                  mime: dataURI.split(',')[0].split(':')[1].split(';')[0],
+                  blob: new Uint8Array(byteString.length)
                 }
-                return ia;
+                for (i = 0; i < byteString.length; i++) {
+                  res.blob[i] = byteString.charCodeAt(i);
+                }
+                return res;
               }
 
               var component = window.rootComponent.refs.compose.refs.attachments,
-                  blob      = new Blob([dataURItoBlob(this.result.data), {type: this.result.type}]);
+                  data      = dataURItoBlob(this.result.data),
+                  blob      = new Blob([data.blob, {type: this.result.type}]);
               blob.name = this.result.name;
-              component.addFiles([component._fromDOM(blob)]);
+              component.addFiles([blob]);
+              if (data.mime.split('/')[0] === 'image') {
+                document.querySelector('.rt-editor').focus();
+                document.execCommand('insertHTML', false, '<img src="' + this.result.data + '" data-src="' + this.result.name + '">');
+              }
             };
             activity.onerror = function () {
               console.error("[client] The activity got an error: " + this.error);

@@ -59,7 +59,7 @@ function modal(content) {
   var mod  = document.createElement('div'),
       cell = document.createElement('div'),
       overlay = document.createElement('div');
-  mod.setAttribute('style', 'display: inline-block; max-width: 50%; background: white');
+  mod.setAttribute('style', 'display: inline-block; max-width: 50%; max-height: 90vh; background: white; padding: 1em; border-radius: .5em; overflow: auto; box-shadow: .5em .5em .5em #000;');
   cell.setAttribute('style', 'display:table-cell; vertical-align:middle; text-align:center');
   overlay.setAttribute('style', 'position: fixed; top: 0; left: 0;display:table; width: 100%; height: 100%; background: rgba(0,0,0,.5)');
   if (content instanceof Element) {
@@ -148,7 +148,8 @@ function Acthesis(opt, manifest) {
     _options.server = window.location.protocol + "//" + window.location.host;
   }
   if (typeof _options.ws === 'undefined') {
-    _options.ws = _options.server.replace(/^[^:]+/, 'ws');
+    // allow to use ws for http and wss for https
+    _options.ws = _options.server.replace(/^http/, 'ws');
   }
   // }}}
 
@@ -167,13 +168,13 @@ function Acthesis(opt, manifest) {
     options.id   = uuid();
     options.type = 'activity';
     function onResponse(response) {
-      var result, xhr;
+      var result;//, xhr;
       if (self.readyState === 'done') {
         return;
       }
       self.readyState = 'done';
       if (iframeContainer) {
-        iframeContainer();
+        iframeContainer.style.display = 'none';
       }
       //if (targetWindow) {
       //  targetWindow.close();
@@ -187,19 +188,31 @@ function Acthesis(opt, manifest) {
       } catch (e) {
         console.debug("[client] INVALID response: ", response);
         self.error = "INVALID response";
-        self.onerror.call(self);
+        if (typeof self.onerror === 'function') {
+          self.onerror.call(self);
+        } else {
+          console.error('Activity has no `onerror` method');
+        }
         return;
       }
-      xhr = new XMLHttpRequest();
-      xhr.open('DELETE', _options.server + '/activity/pending/' + options.id, false);
-      xhr.setRequestHeader("X-Requester", options.handler);
-      xhr.send(null);
+      //xhr = new XMLHttpRequest();
+      //xhr.open('DELETE', _options.server + '/activity/pending/' + options.id, false);
+      //xhr.setRequestHeader("X-Requester", options.handler);
+      //xhr.send(null);
       if (result.type === 'success') {
         self.result = result.data;
-        self.onsuccess.call(self);
+        if (typeof self.onsuccess === 'function') {
+          self.onsuccess.call(self);
+        } else {
+          console.error('Activity has no `onsuccess` method');
+        }
       } else {
         self.error = result.data;
-        self.onerror.call(self);
+        if (typeof self.onerror === 'function') {
+          self.onerror.call(self);
+        } else {
+          console.error('Activity has no `onerror` method');
+        }
       }
     }
     function onXhr(err, xhr) {
@@ -210,34 +223,31 @@ function Acthesis(opt, manifest) {
       function send(num) {
         if (typeof result[num] !== 'undefined') {
           options.handler = result[num].href;
-          if (result[num].disposition === 'inline') {
-            // @TODO: add some style
-            iframe = document.createElement('iframe');
-            iframe.src = options.handler;
-            iframeContainer = modal(iframe);
-            targetWindow = iframe.contentWindow;
-          } else if (result[num].disposition === 'hidden') {
-            // @TODO: add some style
-            iframe = document.createElement('iframe');
-            iframe.src = options.handler;
-            iframe.style.display = 'none';
-            iframeContainer = function () {
-              document.body.removeChild(iframe);
-            };
-            document.body.appendChild(iframe);
-            targetWindow = iframe.contentWindow;
-          } else {
-            targetWindow = window.open(options.handler, 'acthesisTarget');
-          }
-          // Send message with postMessage and via server with XHR
-          // postMessage
           doSend = function () {
+            console.log("postMessage", options);
             targetWindow.postMessage(options, options.handler);
           };
-          if (typeof targetWindow !== 'undefined') {
+          iframe = document.querySelector("iframe[src='" + options.handler + "']");
+          if (iframe === null) {
+            iframe = document.createElement('iframe');
+            iframe.addEventListener('targetLoaded', doSend);
+            iframe.src = options.handler;
+            iframe.setAttribute("style", "position: fixed; top: 0px; left: 0px; width: 100vw; height: 100vh; padding: 1em; background: rgba(127, 127, 127, .5)");
+            document.body.appendChild(iframe);
+            iframeContainer = iframe;
+          } else {
+            iframeContainer = iframe;
+          }
+          if (result[num].disposition === 'inline') {
+            iframeContainer.style.display = 'block';
+          } else {
+            iframeContainer.style.display = 'none';
+          }
+          targetWindow = iframe.contentWindow;
+          if (typeof targetWindow !== 'undefined' && targetWindow !== null) {
             doSend();
           } else {
-            console.log("Unable to open target application");
+            console.error("Unable to open target application");
             self.onerror.call(self);
           }
           // Try until response {
@@ -252,6 +262,7 @@ function Acthesis(opt, manifest) {
           }, 10000);
           */
           // }
+          /*
           // XHR
           post(_options.server + '/activity', options, function (errAct, xhrAct) {
             if (errAct) {
@@ -259,6 +270,7 @@ function Acthesis(opt, manifest) {
             }
             onResponse(xhrAct.responseText);
           });
+          */
         }
       }
       try {
@@ -302,21 +314,37 @@ function Acthesis(opt, manifest) {
       }
     }
     function onMessage(message) {
-      onResponse(message.data);
+      var loadEvent, target;
+      //console.log("Message Received:", message.data);
+      if (message.data.action === "loaded") {
+        target = document.querySelector("iframe[src='" + message.data.url + "']");
+        if (target) {
+          loadEvent = new CustomEvent("targetLoaded", {"detail": {action: "loaded"}});
+          iframe.dispatchEvent(loadEvent);
+        }
+      } else {
+        onResponse(message.data);
+      }
     }
+    // Activity client
     window.addEventListener("message", onMessage, false);
     post(_options.server + '/activity', options, onXhr);
   };
 
   // /!\ This function makes a synchroneous XHR
   navigator.mozHasPendingMessage = function (type) {
-    var xhr = new XMLHttpRequest();
-    xhr.open('GET', _options.server + '/activity/pending?has=true&type=' + type, false);
-    xhr.setRequestHeader("X-Requester", selfUrl);
-    xhr.send(null);
-    if (xhr.status === 200) {
-      return JSON.parse(xhr.responseText).result;
-    } else {
+    try {
+      var xhr = new XMLHttpRequest();
+      xhr.open('GET', _options.server + '/activity/pending?has=true&type=' + type, false);
+      xhr.setRequestHeader("X-Requester", selfUrl);
+      xhr.send(null);
+      if (xhr.status === 200) {
+        return JSON.parse(xhr.responseText).result;
+      } else {
+        return false;
+      }
+    } catch (e) {
+      console.error(e);
       return false;
     }
   };
@@ -325,17 +353,21 @@ function Acthesis(opt, manifest) {
     handlers[type] = handler;
     function getPending(pendingType) {
       if (_options.postMethod === 'message') {
-        var xhr = new XMLHttpRequest();
-        xhr.onload = function (e) {
-          var activities = JSON.parse(xhr.responseText).result;
-          activities.forEach(handleActivity);
-        };
-        xhr.onerror = function (e) {
-          //@TODO
-        };
-        xhr.open('GET', _options.server + '/activity/pending?type=' + pendingType, false);
-        xhr.setRequestHeader("X-Requester", selfUrl);
-        xhr.send(null);
+        try {
+          var xhr = new XMLHttpRequest();
+          xhr.onload = function (e) {
+            var activities = JSON.parse(xhr.responseText).result;
+            activities.forEach(handleActivity);
+          };
+          xhr.onerror = function (e) {
+            console.error("Error setting message handler:", e);
+          };
+          xhr.open('GET', _options.server + '/activity/pending?type=' + pendingType, false);
+          xhr.setRequestHeader("X-Requester", selfUrl);
+          xhr.send(null);
+        } catch (e) {
+          console.error(e);
+        }
       } else {
         if (navigator.mozHasPendingMessage(pendingType)) {
           socket.send(JSON.stringify({type: 'getPending', subtype: pendingType}));
@@ -368,11 +400,14 @@ function Acthesis(opt, manifest) {
         get(_options.server + '/push/register', function (err, xhr) {
           if (err) {
             console.error(err);
+            req.error = {name: err};
+            req.onerror.call(req);
+          } else {
+            var endpoint = JSON.parse(xhr.responseText).endpoint;
+            endpoints.push(new PushRegistration(endpoint));
+            req.result = endpoint;
+            req.onsuccess();
           }
-          var endpoint = JSON.parse(xhr.responseText).endpoint;
-          endpoints.push(new PushRegistration(endpoint));
-          req.result = endpoint;
-          req.onsuccess();
         });
         return req;
       },
@@ -417,10 +452,13 @@ function Acthesis(opt, manifest) {
         get(_options.server + '/alarm', function (err, xhr) {
           if (err) {
             console.error(err);
+            req.error = {name: err};
+            req.onerror.call(req);
+          } else {
+            var alarms = JSON.parse(xhr.responseText);
+            req.result = alarms.data;
+            req.onsuccess();
           }
-          var alarms = JSON.parse(xhr.responseText);
-          req.result = alarms.data;
-          req.onsuccess();
         });
         return req;
       }
@@ -459,11 +497,11 @@ function Acthesis(opt, manifest) {
     description.fullname = document.title;
     post(_options.server + '/activity/register', description, function (err, xhr) {
       if (err) {
-        console.error(err);
+        console.error("Error registering handler '" + description.name + "' : ", err);
       }
     });
     if (!description.disposition) {
-      description.disposition = 'window';
+      description.disposition = 'inline';
     }
     registered.activity.push(description);
   };
@@ -479,7 +517,6 @@ function Acthesis(opt, manifest) {
     var arh, onsuccess, onerror;
     if (typeof handlers[activity.type] === 'undefined') {
       console.error("[provider] No handler for " + activity.type);
-      console.log(handlers);
       reply(JSON.stringify({type: 'error', data: "No handler for " + activity.type}));
     } else {
       onsuccess = function (result) {
@@ -495,6 +532,15 @@ function Acthesis(opt, manifest) {
       handlers[activity.type](arh);
     }
   }
+  function onServerMessage(message) {
+    clientMessage = message;
+    //console.log('[provider]', message);
+    //reply('ack');
+    // If type is undefined, it's an answer
+    if (typeof message.data.type !== 'undefined') {
+      handleActivity(message.data);
+    }
+  }
   if (Object.keys(registered).length > 0) {
     if (_options.postMethod === 'message') {
       reply = function (response) {
@@ -504,12 +550,10 @@ function Acthesis(opt, manifest) {
           clientMessage.source.postMessage(response, clientMessage.origin);
         }
       };
-      window.addEventListener("message", function (message) {
-        clientMessage = message;
-        //console.log('[provider]', message);
-        //reply('ack');
-        handleActivity(message.data);
-      }, false);
+      window.addEventListener("message", onServerMessage, false);
+      if (parent && parent.frames && parent.frames[0] && parent.frames[0].content) {
+        parent.frames[0].content.postMessage({ action: "loaded", url: window.location.toString()}, '*');
+      }
     } else {
       window.WebSocket = window.WebSocket || window.mozWebSocket || window.webkitWebSocket;
       if (typeof window.WebSocket !== 'undefined') {
@@ -555,14 +599,18 @@ function Acthesis(opt, manifest) {
             activities.forEach(handleActivity);
             break;
           case 'alarm':
-            handlers.alarm(message.data);
-            // Delete pending alarms
-            message.data.forEach(function (alarm) {
-              var xhr = new XMLHttpRequest();
-              xhr.open('DELETE', _options.server + '/activity/pending/' + alarm.id, false);
-              xhr.setRequestHeader("X-Requester", selfUrl);
-              xhr.send(null);
-            });
+            if (handlers.alarm) {
+              message.data.forEach(function (alarm) {
+                handlers.alarm(alarm);
+                // Delete pending alarms
+                var xhr = new XMLHttpRequest();
+                xhr.open('DELETE', _options.server + '/activity/pending/' + alarm.id, false);
+                xhr.setRequestHeader("X-Requester", selfUrl);
+                xhr.send(null);
+              });
+            } else {
+              console.log('Alarm received but no handler defined');
+            }
             break;
           case 'push':
             handlers.push(message.data);

@@ -13,6 +13,7 @@
     "uglify-js": "^2.4.17"
   },
   "scripts": {
+    "dev": "cozy-dev undeploy && cozy-dev deploy 9251 && nodemon server.js",
     "start": "node server.js"
   },
   "repository": {
