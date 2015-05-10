@@ -43,7 +43,7 @@ if (typeof window.plugins !== "object") {
       console.log('closed');
       onKo('USER CANCELED');
     }
-    get('/folders/list', function (err, xhr) {
+    get(window.location.pathname + 'folders/list', function (err, xhr) {
       var tree = {}, folders, treeDom, win, wait;
       if (err) {
         console.log(err);
@@ -189,7 +189,7 @@ if (typeof window.plugins !== "object") {
           formData.append("file", blob, data.fileName);
 
           xhr = new XMLHttpRequest();
-          xhr.open("POST", "/files");
+          xhr.open("POST", window.location.pathname + "files");
           xhr.send(formData);
 
           message.postResult(path);
