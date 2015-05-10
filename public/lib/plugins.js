@@ -40,6 +40,10 @@
       if (typeof window.plugins === "undefined") {
         window.plugins = {};
       }
+      // Merge plugins set by application settings
+      if (typeof window.settings === 'object' && typeof window.settings.plugins === 'object') {
+        self.merge(window.settings.plugins);
+      }
       // Observe addition to plugins
       if (typeof Object.observe === 'function') {
         Object.observe(window.plugins, function (changes) {
@@ -82,6 +86,9 @@
                   listeners = pluginConf.onAdd;
                 } else if (action === 'delete') {
                   listeners = pluginConf.onDelete;
+                }
+                if (typeof listeners === 'undefined') {
+                  return;
                 }
                 if (!Array.isArray(listeners)) {
                   listeners = [listeners];
@@ -146,7 +153,7 @@
       if (plugin.onActivate) {
         plugin.onActivate();
       }
-      if (type !== null) {
+      if (typeof type !== 'undefined') {
         Object.keys(window.plugins).forEach(function (pluginName) {
           var pluginConf = window.plugins[pluginName];
           if (pluginName !== key) {

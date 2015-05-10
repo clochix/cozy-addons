@@ -10,7 +10,7 @@ if (typeof window.plugins !== "object") {
     onActivate: function () {
       function handler(message) {
         console.log('HANDLER', message);
-        function save(data) {
+        function addEvent(data) {
           var blob, formData, xhr;
           blob = new Blob([data.value], {type: 'text/calendar'});
           formData = new FormData();
@@ -48,8 +48,8 @@ if (typeof window.plugins !== "object") {
           xhr.send(formData);
         }
         switch (message.source.name) {
-          case 'save':
-            save(message.source.data);
+          case 'addEvent':
+            addEvent(message.source.data);
             break;
           default:
             message.postError("WRONG ACTIVITY");
@@ -67,7 +67,7 @@ if (typeof window.plugins !== "object") {
         }
         manifest = {
           "activities": {
-            "save": {
+            "addEvent": {
               "disposition": 'hidden',
               "filters": {
                 "type": ['ical']

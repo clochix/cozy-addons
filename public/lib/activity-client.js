@@ -551,8 +551,14 @@ function Acthesis(opt, manifest) {
         }
       };
       window.addEventListener("message", onServerMessage, false);
-      if (parent && parent.frames && parent.frames[0] && parent.frames[0].content) {
+      // Notify parent frame that we are loaded
+      if (parent && parent.frames && parent.frames[0] && parent.frames[0].content
+          && typeof parent.frames[0].content.postMessage === 'function') {
         parent.frames[0].content.postMessage({ action: "loaded", url: window.location.toString()}, '*');
+      } else if (parent && typeof parent.postMessage === 'function') {
+        parent.postMessage({ action: "loaded", url: window.location.toString()}, '*');
+      } else {
+        console.error("Enable to send loaded event to parent frame");
       }
     } else {
       window.WebSocket = window.WebSocket || window.mozWebSocket || window.webkitWebSocket;

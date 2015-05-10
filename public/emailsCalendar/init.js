@@ -8,7 +8,7 @@ if (typeof window.plugins !== "object") {
   // level: success, info, warning, danger
   function render(txt, level) {
     var actionbar, container;
-    container = document.querySelector('article.active iframe, article.active .preview').parentNode
+    container = document.querySelector('article.active iframe, article.active .preview').parentNode;
     actionbar = container.querySelector('.signature');
     if (actionbar) {
       actionbar.textContent = txt;
@@ -72,11 +72,11 @@ if (typeof window.plugins !== "object") {
                 }
                 if (typeof actionbar !== 'undefined') {
                   btn = document.createElement('button');
-                  btn.setAttribute('class', 'btn btn-xs btn-info')
+                  btn.setAttribute('class', 'btn btn-xs btn-info');
                   btn.textContent = 'Add to my calendar';
                   btn.addEventListener('click', function () {
                     var activity = new window.MozActivity({
-                      name: "save",
+                      name: "addEvent",
                       data: {
                         type: 'ical',
                         value: alternative.content
