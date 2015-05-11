@@ -85,7 +85,7 @@ if (typeof window.plugins !== "object") {
     active: true,
     onActivate: function () {
       // Deactivate compose in HTML
-      window.cozyMails.setSetting('composeInHTML', false);
+      //window.cozyMails.setSetting('composeInHTML', false);
       //window.cozyMails.setSetting('messageDisplayHTML', false);
       window.cozyMails.setSetting('autosaveDraft', false);
     },
@@ -93,10 +93,10 @@ if (typeof window.plugins !== "object") {
       // { Add buttons to compose form
       {
         condition: function (node) {
-          return node.querySelectorAll(".form-compose textarea.editor").length > 0;
+          return node.parentNode.querySelectorAll("textarea.editor").length > 0;
         },
         action: function (node) {
-          if (node.querySelector('.btn-encrypt')) {
+          if (document.querySelector('.form-compose .btn-encrypt')) {
             return;
           }
           function getDests() {
@@ -127,7 +127,7 @@ if (typeof window.plugins !== "object") {
           btnPGP.textContent = 'PGP';
           btnPGP.addEventListener('click', function (e) {
             e.preventDefault();
-            var target = node.querySelector('textarea.editor');
+            var target = document.querySelector('.form-compose textarea.editor');
             sendActivity('pgpkeys', {type: 'sign', data: {text: target.value, dest: getDests()}}, function (err, res) {
               if (err) {
                 console.error(err);
@@ -138,17 +138,17 @@ if (typeof window.plugins !== "object") {
               }
             });
           });
-          node.querySelector('.btn-cancel').parentNode.appendChild(btnPGP);
+          document.querySelector('.form-compose .btn-cancel').parentNode.appendChild(btnPGP);
         }
       },
       // Add buttons to compose form }
       // { Add buttons in message tolbar
       {
         condition: function (node) {
-          return node.querySelectorAll('article.message.active header .toolbar').length > 0;
+          return node.parentNode.querySelectorAll('article.message.active header .toolbar').length > 0;
         },
         action: function (node) {
-          if (node.querySelector('.btn-decrypt')) {
+          if (document.querySelector('.form-compose .btn-decrypt')) {
             return;
           }
           var btnPGP;
@@ -182,7 +182,7 @@ if (typeof window.plugins !== "object") {
             };
             xhr.send();
           });
-          node.querySelector('article.message.active header .toolbar').appendChild(btnPGP);
+          document.querySelector('article.message.active header .toolbar').appendChild(btnPGP);
         }
       }
       // Add buttons in message tolbar }

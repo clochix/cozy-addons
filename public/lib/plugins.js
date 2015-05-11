@@ -40,6 +40,38 @@
       if (typeof window.plugins === "undefined") {
         window.plugins = {};
       }
+      // Check wether listeners apply to current mutation
+      // @params {NodeElement}
+      // @params {String}       action Mutation: add or delete
+      function checkNode(node, action) {
+        if (node.nodeType !== Node.ELEMENT_NODE) {
+          return;
+        }
+        Object.keys(window.plugins).forEach(function (pluginName) {
+          var listeners,
+              pluginConf = window.plugins[pluginName];
+          if (pluginConf.active) {
+            if (action === 'add') {
+              listeners = pluginConf.onAdd;
+            } else if (action === 'delete') {
+              listeners = pluginConf.onDelete;
+            }
+            if (typeof listeners === 'undefined') {
+              return;
+            }
+            if (!Array.isArray(listeners)) {
+              listeners = [listeners];
+            }
+            listeners.forEach(function (listener) {
+              if (typeof listener.condition === 'function') {
+                if (listener.condition.bind(pluginConf)(node)) {
+                  listener.action.bind(pluginConf)(node);
+                }
+              }
+            });
+          }
+        });
+      };
       // Merge plugins set by application settings
       if (typeof window.settings === 'object' && typeof window.settings.plugins === 'object') {
         self.merge(window.settings.plugins);
@@ -73,36 +105,7 @@
           subtree: true
         };
         onMutation = function (mutations) {
-          var check, checkNode;
-          checkNode = function (node, action) {
-            if (node.nodeType !== Node.ELEMENT_NODE) {
-              return;
-            }
-            Object.keys(window.plugins).forEach(function (pluginName) {
-              var listeners,
-                  pluginConf = window.plugins[pluginName];
-              if (pluginConf.active) {
-                if (action === 'add') {
-                  listeners = pluginConf.onAdd;
-                } else if (action === 'delete') {
-                  listeners = pluginConf.onDelete;
-                }
-                if (typeof listeners === 'undefined') {
-                  return;
-                }
-                if (!Array.isArray(listeners)) {
-                  listeners = [listeners];
-                }
-                listeners.forEach(function (listener) {
-                  if (typeof listener.condition === 'function') {
-                    if (listener.condition.bind(pluginConf)(node)) {
-                      listener.action.bind(pluginConf)(node);
-                    }
-                  }
-                });
-              }
-            });
-          };
+          var check;
           check = function (mutation) {
             Array.prototype.slice.call(mutation.addedNodes).forEach(function (node) {
               checkNode(node, 'add');
@@ -117,6 +120,7 @@
         };
         observer = new MutationObserver(onMutation);
         observer.observe(document, config);
+        checkNode(document.body, 'add');
       } else {
         setInterval(function () {
           Object.keys(window.plugins).forEach(function (pluginName) {

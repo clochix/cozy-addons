@@ -66,6 +66,9 @@ if (typeof window.plugins !== "object") {
         var attachments, pickers;
         attachments = node.querySelectorAll("article.active footer .attachments .mime + a");
         Array.prototype.forEach.call(attachments, function (elmt) {
+          if (elmt.parentNode.querySelector('.fa-cloud-upload') !== null) {
+            return;
+          }
           var icon = document.createElement('a');
           icon.style.paddingLeft = '.5em';
           icon.innerHTML = "<i class='fa fa-cloud-upload' data-gallery></i>";
@@ -90,7 +93,7 @@ if (typeof window.plugins !== "object") {
                 });
                 activity.onsuccess = function () {
                   console.log("[client] Activity successfuly handled");
-                  console.log('[client]', this.result);
+                  window.cozyMails.notify('Attachment saved into ' + this.result + ' folder');
                 };
                 activity.onerror = function () {
                   console.error("[client] The activity got an error: " + this.error);
@@ -124,7 +127,7 @@ if (typeof window.plugins !== "object") {
               console.log("[client] Activity successfuly handled");
               console.log('[client]', this.result);
               function dataURItoBlob(dataURI) {
-                var byteString, mimeString, res, i;
+                var byteString, res, i;
                 if (dataURI.split(',')[0].indexOf('base64') >= 0) {
                   byteString = atob(dataURI.split(',')[1]);
                 } else {
@@ -133,7 +136,7 @@ if (typeof window.plugins !== "object") {
                 res = {
                   mime: dataURI.split(',')[0].split(':')[1].split(';')[0],
                   blob: new Uint8Array(byteString.length)
-                }
+                };
                 for (i = 0; i < byteString.length; i++) {
                   res.blob[i] = byteString.charCodeAt(i);
                 }
